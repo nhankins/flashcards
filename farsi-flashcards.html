@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farsi Mastery - Flashcards</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f0e0d;
+            --bg-secondary: #1a1916;
+            --bg-card: #252420;
+            --text-primary: #f5f5f5;
+            --text-secondary: #a8a8a8;
+            --accent: #2e7d32;
+            --accent-hover: #4caf50;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --border: rgba(255, 255, 255, 0.08);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        body {
+            font-family: 'Vazirmatn', 'Tahoma', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            direction: rtl;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent), #66bb6a);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .brand h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff, #ccc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            min-height: calc(100vh - 80px);
+        }
+
+        /* Left Panel - Card Area */
+        .card-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .card-stage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            perspective: 1000px;
+            min-height: 500px;
+        }
+
+        .flashcard {
+            width: 100%;
+            max-width: 500px;
+            height: 400px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            overflow: hidden;
+        }
+
+        .card-front {
+            background: linear-gradient(135deg, var(--bg-card), var(--bg-secondary));
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+        }
+
+        .card-content {
+            text-align: center;
+            width: 100%;
+        }
+
+        .farsi-container {
+            margin-bottom: 1rem;
+        }
+
+        .farsi-word {
+            font-size: 3.5rem;
+            font-weight: 300;
+            line-height: 1.6;
+            color: var(--text-primary);
+            font-family: 'Vazirmatn', 'Tahoma', sans-serif;
+        }
+
+        .pronunciation {
+            font-size: 1.5rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            direction: ltr;
+        }
+
+        .pronunciation.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .definition {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        .definition.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .sentence-section {
+            width: 100%;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s ease;
+            max-height: 0;
+            overflow: hidden;
+        }
+
+        .sentence-section.revealed {
+            opacity: 1;
+            transform: translateY(0);
+            max-height: 300px;
+        }
+
+        .sentence-farsi {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            line-height: 1.8;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            border-right: 3px solid var(--accent);
+            font-family: 'Vazirmatn', 'Tahoma', sans-serif;
+        }
+
+        .sentence-pronunciation {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            font-style: italic;
+            direction: ltr;
+        }
+
+        .sentence-english {
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            line-height: 1.5;
+            padding: 1rem;
+            background: rgba(76, 175, 80, 0.1);
+            border-radius: 10px;
+            border-right: 3px solid var(--success);
+            direction: ltr;
+        }
+
+        .reveal-hint {
+            position: absolute;
+            bottom: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+
+        .flashcard:hover .reveal-hint {
+            opacity: 1;
+        }
+
+        .hint-icon {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+
+        /* Controls */
+        .controls-area {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .grade-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
+        }
+
+        .grade-btn {
+            padding: 1rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .grade-again {
+            background: rgba(244, 67, 54, 0.15);
+            color: #f44336;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+
+        .grade-hard {
+            background: rgba(255, 152, 0, 0.15);
+            color: var(--warning);
+            border: 1px solid rgba(255, 152, 0, 0.3);
+        }
+
+        .grade-good {
+            background: rgba(76, 175, 80, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .grade-easy {
+            background: rgba(33, 150, 243, 0.15);
+            color: #2196f3;
+            border: 1px solid rgba(33, 150, 243, 0.3);
+        }
+
+        .grade-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.2);
+        }
+
+        .grade-btn:active {
+            transform: translateY(0);
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+
+        .nav-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-btn:hover {
+            background: var(--bg-card);
+            border-color: var(--accent);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Right Panel - Sidebar */
+        .sidebar {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .filter-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 2.5rem 0.75rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            text-align: right;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        .level-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .level-btn {
+            padding: 0.5rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .level-btn:hover {
+            border-color: var(--text-secondary);
+        }
+
+        .level-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 0.5rem;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .grid-card {
+            aspect-ratio: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            font-family: 'Vazirmatn', 'Tahoma', sans-serif;
+        }
+
+        .grid-card:hover {
+            border-color: var(--accent);
+            transform: scale(1.05);
+        }
+
+        .grid-card.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .grid-card.learned {
+            border-color: var(--success);
+        }
+
+        .grid-card.learned::after {
+            content: '✓';
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            font-size: 0.6rem;
+            color: var(--success);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 0.75rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1100px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                max-height: none;
+            }
+
+            .card-stage {
+                min-height: 400px;
+            }
+
+            .flashcard {
+                height: 350px;
+            }
+
+            .farsi-word {
+                font-size: 3rem;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header {
+                padding: 1rem;
+            }
+
+            .stats-bar {
+                gap: 1rem;
+            }
+
+            .main-container {
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .flashcard {
+                height: 320px;
+            }
+
+            .farsi-word {
+                font-size: 2.5rem;
+            }
+
+            .grade-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-in {
+            animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <header class="header">
+        <div class="brand">
+            <div class="brand-icon">ف</div>
+            <h1>Farsi Mastery</h1>
+        </div>
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="totalCards">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="learnedCards">0</div>
+                <div class="stat-label">Learned</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="currentLevel">Level 1</div>
+                <div class="stat-label">Level</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <div class="card-panel">
+            <div class="card-stage">
+                <div class="flashcard" id="flashcard">
+                    <div class="card-face card-front">
+                        <div class="card-content">
+                            <div class="farsi-container">
+                                <div class="farsi-word" id="frontFarsi">سلام</div>
+                            </div>
+                            <div class="pronunciation" id="frontPronunciation">salām</div>
+                            <div class="definition" id="frontDefinition">hello</div>
+                        </div>
+                        <div class="reveal-hint">
+                            <span class="hint-icon">👆</span>
+                            <span>Tap to Reveal</span>
+                        </div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div class="card-content">
+                            <div class="sentence-section" id="sentenceSection">
+                                <div class="sentence-farsi" id="backSentenceFa"></div>
+                                <div class="sentence-pronunciation" id="backSentencePr"></div>
+                                <div class="sentence-english" id="backSentenceEn"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls-area">
+                <div class="grade-buttons">
+                    <button class="grade-btn grade-again" onclick="gradeCard('again')">Again</button>
+                    <button class="grade-btn grade-hard" onclick="gradeCard('hard')">Hard</button>
+                    <button class="grade-btn grade-good" onclick="gradeCard('good')">Good</button>
+                    <button class="grade-btn grade-easy" onclick="gradeCard('easy')">Easy</button>
+                </div>
+                <div class="nav-buttons">
+                    <button class="nav-btn" id="prevBtn" onclick="previousCard()">Previous ←</button>
+                    <button class="nav-btn" id="nextBtn" onclick="nextCard()">Next →</button>
+                </div>
+            </div>
+        </div>
+
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2 class="sidebar-title">Card Library</h2>
+                <span id="cardCount">0 cards</span>
+            </div>
+
+            <div class="filter-controls">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search words..." oninput="filterCards()">
+                </div>
+
+                <div class="level-filters" id="levelFilters">
+                    <button class="level-btn active" data-level="all">All</button>
+                    <button class="level-btn" data-level="1">Level 1</button>
+                    <button class="level-btn" data-level="2">Level 2</button>
+                    <button class="level-btn" data-level="3">Level 3</button>
+                    <button class="level-btn" data-level="4">Level 4</button>
+                    <button class="level-btn" data-level="5">Level 5</button>
+                </div>
+            </div>
+
+            <div class="card-grid" id="cardGrid"></div>
+
+            <div class="action-buttons">
+                <button class="action-btn" onclick="shuffleCards()">🔀 Shuffle</button>
+                <button class="action-btn" onclick="resetProgress()">↺ Reset</button>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+        // Farsi Vocabulary Data
+        const farsiData = [
+            { farsi: 'سلام', pronunciation: 'salām', definition: 'hello', level: 1, sentence: { fa: 'سلام، حالت چطور است؟', pr: 'Salām, hālet chetor ast?', en: 'Hello, how are you?' } },
+            { farsi: 'خداحافظ', pronunciation: 'khodāhāfez', definition: 'goodbye', level: 1, sentence: { fa: 'خداحافظ، فردا می‌بینمت', pr: 'Khodāhāfez, fardā mibinamet', en: 'Goodbye, see you tomorrow' } },
+            { farsi: 'بله', pronunciation: 'bale', definition: 'yes', level: 1, sentence: { fa: 'بله، من موافقم', pr: 'Bale, man movāfegham', en: 'Yes, I agree' } },
+            { farsi: 'نه', pronunciation: 'na', definition: 'no', level: 1, sentence: { fa: 'نه، ممنون', pr: 'Na, mamnun', en: 'No, thank you' } },
+            { farsi: 'ممنون', pronunciation: 'mamnun', definition: 'thank you', level: 1, sentence: { fa: 'ممنون از کمک شما', pr: 'Mamnun az komake shomā', en: 'Thank you for your help' } },
+            { farsi: 'لطفاً', pronunciation: 'lotfan', definition: 'please', level: 1, sentence: { fa: 'لطفاً آب بدهید', pr: 'Lotfan āb bedahid', en: 'Please give me water' } },
+            { farsi: 'من', pronunciation: 'man', definition: 'I, me', level: 1, sentence: { fa: 'من دانشجو هستم', pr: 'Man dāneshjo hastam', en: 'I am a student' } },
+            { farsi: 'تو', pronunciation: 'to', definition: 'you (informal)', level: 1, sentence: { fa: 'تو کجا هستی؟', pr: 'To kojā hasti?', en: 'Where are you?' } },
+            { farsi: 'او', pronunciation: 'u', definition: 'he, she', level: 1, sentence: { fa: 'او معلم است', pr: 'U moallem ast', en: 'He/She is a teacher' } },
+            { farsi: 'ما', pronunciation: 'mā', definition: 'we, us', level: 1, sentence: { fa: 'ما به مدرسه می‌رویم', pr: 'Mā be madrese miravim', en: 'We go to school' } },
+            { farsi: 'آنها', pronunciation: 'ānhā', definition: 'they, them', level: 1, sentence: { fa: 'آنها در پارک هستند', pr: 'Ānhā dar pārk hastand', en: 'They are in the park' } },
+            { farsi: 'این', pronunciation: 'in', definition: 'this', level: 1, sentence: { fa: 'این کتاب من است', pr: 'In ketābe man ast', en: 'This is my book' } },
+            { farsi: 'آن', pronunciation: 'ān', definition: 'that', level: 1, sentence: { fa: 'آن ماشین قرمز است', pr: 'Ān māshin ghermez ast', en: 'That car is red' } },
+            { farsi: 'چه', pronunciation: 'che', definition: 'what', level: 1, sentence: { fa: 'چه خبر؟', pr: 'Che khabar?', en: 'What\'s news?' } },
+            { farsi: 'کجا', pronunciation: 'kojā', definition: 'where', level: 1, sentence: { fa: 'کجا زندگی می‌کنی؟', pr: 'Kojā zendegi mikoni?', en: 'Where do you live?' } },
+            { farsi: 'کی', pronunciation: 'key', definition: 'when', level: 1, sentence: { fa: 'کی می‌آیی؟', pr: 'Key miāyi?', en: 'When are you coming?' } },
+            { farsi: 'چرا', pronunciation: 'cherā', definition: 'why', level: 1, sentence: { fa: 'چرا دیر کردی؟', pr: 'Cherā dir kardi?', en: 'Why are you late?' } },
+            { farsi: 'چطور', pronunciation: 'chetor', definition: 'how', level: 1, sentence: { fa: 'چطور می‌توانم کمک کنم؟', pr: 'Chetor mitavanam komak konam?', en: 'How can I help?' } },
+            { farsi: 'چند', pronunciation: 'chand', definition: 'how many/much', level: 1, sentence: { fa: 'چند سال داری؟', pr: 'Chand sāl dāri?', en: 'How old are you?' } },
+            { farsi: 'کدام', pronunciation: 'kodām', definition: 'which', level: 1, sentence: { fa: 'کدام را دوست داری؟', pr: 'Kodām rā dust dāri?', en: 'Which one do you like?' } },
+            { farsi: 'بودن', pronunciation: 'budan', definition: 'to be', level: 2, sentence: { fa: 'می‌خواهم خوشحال باشم', pr: 'Mikhāham khoshhāl bāsham', en: 'I want to be happy' } },
+            { farsi: 'داشتن', pronunciation: 'dāshtan', definition: 'to have', level: 2, sentence: { fa: 'من یک خواهر دارم', pr: 'Man yek khāhar dāram', en: 'I have a sister' } },
+            { farsi: 'کردن', pronunciation: 'kardan', definition: 'to do, to make', level: 2, sentence: { fa: 'باید تکالیفم را انجام دهم', pr: 'Bāyad takālifam rā anjām daham', en: 'I must do my homework' } },
+            { farsi: 'گفتن', pronunciation: 'goftan', definition: 'to say, to tell', level: 2, sentence: { fa: 'چه چیزی گفتی؟', pr: 'Che chizi gofti?', en: 'What did you say?' } },
+            { farsi: 'دیدن', pronunciation: 'didan', definition: 'to see', level: 2, sentence: { fa: 'دیروز او را دیدم', pr: 'Diruz u rā didam', en: 'I saw him/her yesterday' } },
+            { farsi: 'رفتن', pronunciation: 'raftan', definition: 'to go', level: 2, sentence: { fa: 'به کجا می‌روی؟', pr: 'Be kojā miravi?', en: 'Where are you going?' } },
+            { farsi: 'آمدن', pronunciation: 'āmadan', definition: 'to come', level: 2, sentence: { fa: 'کی به خانه می‌آیی؟', pr: 'Key be khāne miāyi?', en: 'When are you coming home?' } },
+            { farsi: 'خوردن', pronunciation: 'khordan', definition: 'to eat', level: 2, sentence: { fa: 'صبحانه خورده‌ای؟', pr: 'Sobhāne khorde-i?', en: 'Have you eaten breakfast?' } },
+            { farsi: 'نوشیدن', pronunciation: 'nushidan', definition: 'to drink', level: 2, sentence: { fa: 'آب می‌نوشم', pr: 'Āb minusham', en: 'I drink water' } },
+            { farsi: 'خواندن', pronunciation: 'khāndan', definition: 'to read, to sing', level: 2, sentence: { fa: 'کتاب می‌خوانم', pr: 'Ketāb mikhānam', en: 'I read a book' } },
+            { farsi: 'نوشتن', pronunciation: 'neveshtan', definition: 'to write', level: 2, sentence: { fa: 'نامه می‌نویسم', pr: 'Nāme minevisam', en: 'I write a letter' } },
+            { farsi: 'خریدن', pronunciation: 'kharidan', definition: 'to buy', level: 2, sentence: { fa: 'از سوپرمارکت خرید کردم', pr: 'Az supermarket kharid kardam', en: 'I bought from the supermarket' } },
+            { farsi: 'فروختن', pronunciation: 'forukhtan', definition: 'to sell', level: 2, sentence: { fa: 'خانه‌اش را فروخت', pr: 'Khāne-ash rā forukht', en: 'He sold his house' } },
+            { farsi: 'دانستن', pronunciation: 'dānestan', definition: 'to know', level: 2, sentence: { fa: 'جواب را می‌دانم', pr: 'Javāb rā midānam', en: 'I know the answer' } },
+            { farsi: 'خواستن', pronunciation: 'khāstan', definition: 'to want', level: 2, sentence: { fa: 'چه می‌خواهی؟', pr: 'Che mikhāhi?', en: 'What do you want?' } },
+            { farsi: 'توانستن', pronunciation: 'tavānestan', definition: 'to be able to, can', level: 2, sentence: { fa: 'می‌توانم کمکت کنم', pr: 'Mitavanam komaket konam', en: 'I can help you' } },
+            { farsi: 'فهمیدن', pronunciation: 'fahmidan', definition: 'to understand', level: 2, sentence: { fa: 'متوجه شدم', pr: 'Motavajjeh shodam', en: 'I understood' } },
+            { farsi: 'یاد گرفتن', pronunciation: 'yād gereftan', definition: 'to learn', level: 2, sentence: { fa: 'دارم فارسی یاد می‌گیرم', pr: 'Dāram fārsi yād migiram', en: 'I am learning Farsi' } },
+            { farsi: 'کار کردن', pronunciation: 'kār kardan', definition: 'to work', level: 2, sentence: { fa: 'در بانک کار می‌کنم', pr: 'Dar bānk kār mikonam', en: 'I work at a bank' } },
+            { farsi: 'زندگی کردن', pronunciation: 'zendegi kardan', definition: 'to live', level: 2, sentence: { fa: 'در تهران زندگی می‌کنم', pr: 'Dar Tehrān zendegi mikonam', en: 'I live in Tehran' } },
+            { farsi: 'امروز', pronunciation: 'emruz', definition: 'today', level: 3, sentence: { fa: 'امروز هوا خوب است', pr: 'Emruz havā khub ast', en: 'The weather is good today' } },
+            { farsi: 'دیروز', pronunciation: 'diruz', definition: 'yesterday', level: 3, sentence: { fa: 'دیروز باران آمد', pr: 'Diruz bārān āmad', en: 'It rained yesterday' } },
+            { farsi: 'فردا', pronunciation: 'fardā', definition: 'tomorrow', level: 3, sentence: { fa: 'فردا به مسافرت می‌روم', pr: 'Fardā be mosāferat miravam', en: 'Tomorrow I will travel' } },
+            { farsi: 'صبح', pronunciation: 'sobh', definition: 'morning', level: 3, sentence: { fa: 'صبح بخیر', pr: 'Sobh bekheyr', en: 'Good morning' } },
+            { farsi: 'ظهر', pronunciation: 'zohr', definition: 'noon', level: 3, sentence: { fa: 'ظهر به خانه برمی‌گردم', pr: 'Zohr be khāne barmigardam', en: 'I return home at noon' } },
+            { farsi: 'عصر', pronunciation: 'asr', definition: 'afternoon/evening', level: 3, sentence: { fa: 'عصر به سینما می‌رویم', pr: 'Asr be sinema miravim', en: 'We go to cinema in the evening' } },
+            { farsi: 'شب', pronunciation: 'shab', definition: 'night', level: 3, sentence: { fa: 'شب بخیر', pr: 'Shab bekheyr', en: 'Good night' } },
+            { farsi: 'الان', pronunciation: 'alān', definition: 'now', level: 3, sentence: { fa: 'الان نمی‌توانم', pr: 'Alān nemitavanam', en: 'I cannot now' } },
+            { farsi: 'بعداً', pronunciation: 'ba\'dan', definition: 'later', level: 3, sentence: { fa: 'بعداً صحبت می‌کنیم', pr: 'Ba\'dan sohbat mikonim', en: 'We will talk later' } },
+            { farsi: 'همیشه', pronunciation: 'hamishe', definition: 'always', level: 3, sentence: { fa: 'همیشه خوشحالم', pr: 'Hamishe khoshhālam', en: 'I am always happy' } },
+            { farsi: 'هیچ‌وقت', pronunciation: 'hichvaqt', definition: 'never', level: 3, sentence: { fa: 'هیچ‌وقت دیر نمی‌کنم', pr: 'Hichvaqt dir nemikonam', en: 'I am never late' } },
+            { farsi: 'گاهی', pronunciation: 'gāhi', definition: 'sometimes', level: 3, sentence: { fa: 'گاهی ورزش می‌کنم', pr: 'Gāhi varezesh mikonam', en: 'Sometimes I exercise' } },
+            { farsi: 'اغلب', pronunciation: 'aghlāb', definition: 'often', level: 3, sentence: { fa: 'اغلب به کتابخانه می‌روم', pr: 'Aghlāb be ketābkhāne miravam', en: 'I often go to the library' } },
+            { farsi: 'به ندرت', pronunciation: 'be nodrat', definition: 'rarely', level: 3, sentence: { fa: 'به ندرت تلویزیون می‌بینم', pr: 'Be nodrat televizion mibinam', en: 'I rarely watch TV' } },
+            { farsi: 'زود', pronunciation: 'zud', definition: 'early, fast', level: 3, sentence: { fa: 'زود بیا', pr: 'Zud biā', en: 'Come early/fast' } },
+            { farsi: 'دیر', pronunciation: 'dir', definition: 'late', level: 3, sentence: { fa: 'دیر نکن', pr: 'Dir nakon', en: 'Don\'t be late' } },
+            { farsi: 'سریع', pronunciation: 'sari\', definition: 'fast, quick', level: 3, sentence: { fa: 'سریع بدو', pr: 'Sari\' bedo', en: 'Run fast' } },
+            { farsi: 'آهسته', pronunciation: 'āheste', definition: 'slow', level: 3, sentence: { fa: 'آهسته صحبت کن', pr: 'Āheste sohbat kon', en: 'Speak slowly' } },
+            { farsi: 'خوب', pronunciation: 'khub', definition: 'good, well', level: 3, sentence: { fa: 'حالت خوب است؟', pr: 'Hālet khub ast?', en: 'Are you well?' } },
+            { farsi: 'بد', pronunciation: 'bad', definition: 'bad', level: 3, sentence: { fa: 'حس بدی دارم', pr: 'Hesse badi dāram', en: 'I feel bad' } },
+            { farsi: 'بزرگ', pronunciation: 'bozorg', definition: 'big, large', level: 4, sentence: { fa: 'خانه بزرگی داریم', pr: 'Khāne bozorgi dārim', en: 'We have a big house' } },
+            { farsi: 'کوچک', pronunciation: 'kuchak', definition: 'small', level: 4, sentence: { fa: 'اتاق کوچکی دارم', pr: 'Otāgh kuchaki dāram', en: 'I have a small room' } },
+            { farsi: 'زیاد', pronunciation: 'ziād', definition: 'many, much', level: 4, sentence: { fa: 'کار زیادی دارم', pr: 'Kār ziādi dāram', en: 'I have a lot of work' } },
+            { farsi: 'کم', pronunciation: 'kam', definition: 'few, little', level: 4, sentence: { fa: 'پول کمی دارم', pr: 'Pool kami dāram', en: 'I have little money' } },
+            { farsi: 'جدید', pronunciation: 'jadid', definition: 'new', level: 4, sentence: { fa: 'ماشین جدید خریدم', pr: 'Māshin jadid kharidam', en: 'I bought a new car' } },
+            { farsi: 'قدیمی', pronunciation: 'ghadimi', definition: 'old', level: 4, sentence: { fa: 'این ساختمان قدیمی است', pr: 'In sākhtemān ghadimi ast', en: 'This building is old' } },
+            { farsi: 'زیبا', pronunciation: 'zibā', definition: 'beautiful', level: 4, sentence: { fa: 'گل‌های زیبایی هستند', pr: 'Golhāye zibāyi hastand', en: 'There are beautiful flowers' } },
+            { farsi: 'زشت', pronunciation: 'zesht', definition: 'ugly', level: 4, sentence: { fa: 'این لباس زشت است', pr: 'In lebās zesht ast', en: 'This dress is ugly' } },
+            { farsi: 'سخت', pronunciation: 'sakht', definition: 'hard, difficult', level: 4, sentence: { fa: 'امتحان سخت بود', pr: 'Emtehān sakht bud', en: 'The exam was hard' } },
+            { farsi: 'آسان', pronunciation: 'āsān', definition: 'easy', level: 4, sentence: { fa: 'این کار آسان است', pr: 'In kār āsān ast', en: 'This task is easy' } },
+            { farsi: 'مهم', pronunciation: 'mohem', definition: 'important', level: 4, sentence: { fa: 'جلسه مهمی دارم', pr: 'Jalse mohemi dāram', en: 'I have an important meeting' } },
+            { farsi: 'ارزان', pronunciation: 'arzān', definition: 'cheap', level: 4, sentence: { fa: 'اینجا همه چیز ارزان است', pr: 'Injā hame chiz arzān ast', en: 'Everything here is cheap' } },
+            { farsi: 'گران', pronunciation: 'gerān', definition: 'expensive', level: 4, sentence: { fa: 'این گوشی گران است', pr: 'In gushi gerān ast', en: 'This phone is expensive' } },
+            { farsi: 'تمیز', pronunciation: 'tamiz', definition: 'clean', level: 4, sentence: { fa: 'اتاق تمیز است', pr: 'Otāgh tamiz ast', en: 'The room is clean' } },
+            { farsi: 'کثیف', pronunciation: 'kasif', definition: 'dirty', level: 4, sentence: { fa: 'لباس‌های کثیف را بشوی', pr: 'Lebāshāye kasif rā beshuy', en: 'Wash the dirty clothes' } },
+            { farsi: 'گرم', pronunciation: 'garm', definition: 'hot, warm', level: 4, sentence: { fa: 'هوا خیلی گرم است', pr: 'Havā kheili garm ast', en: 'The weather is very hot' } },
+            { farsi: 'سرد', pronunciation: 'sard', definition: 'cold', level: 4, sentence: { fa: 'دست‌هایت سرد است', pr: 'Dasthāyet sard ast', en: 'Your hands are cold' } },
+            { farsi: 'خوشحال', pronunciation: 'khoshhāl', definition: 'happy', level: 4, sentence: { fa: 'از دیدنت خوشحالم', pr: 'Az didanat khoshhālam', en: 'I am happy to see you' } },
+            { farsi: 'ناراحت', pronunciation: 'nārāhat', definition: 'sad, upset', level: 4, sentence: { fa: 'چرا ناراحتی؟', pr: 'Cherā nārāhati?', en: 'Why are you sad?' } },
+            { farsi: 'خسته', pronunciation: 'khaste', definition: 'tired', level: 4, sentence: { fa: 'خیلی خسته‌ام', pr: 'Kheili khaste-am', en: 'I am very tired' } },
+            { farsi: 'عصبانی', pronunciation: 'asabāni', definition: 'angry', level: 4, sentence: { fa: 'از دستم عصبانی شد', pr: 'Az dastam asabāni shod', en: 'He got angry at me' } },
+            { farsi: 'ترسیده', pronunciation: 'tarside', definition: 'scared', level: 4, sentence: { fa: 'بچه ترسیده است', pr: 'Bache tarside ast', en: 'The child is scared' } },
+            { farsi: 'شجاع', pronunciation: 'shujā\'', definition: 'brave', level: 4, sentence: { fa: 'او پسر شجاعی است', pr: 'U pesar shujā\'i ast', en: 'He is a brave boy' } },
+            { farsi: 'مهربان', pronunciation: 'mehrabān', definition: 'kind', level: 4, sentence: { fa: 'مادر مهربانی دارد', pr: 'Mādar mehrabāni dārad', en: 'He has a kind mother' } },
+            { farsi: 'خانواده', pronunciation: 'khānevāde', definition: 'family', level: 5, sentence: { fa: 'خانواده من بزرگ است', pr: 'Khānevāde man bozorg ast', en: 'My family is big' } },
+            { farsi: 'دوست', pronunciation: 'dust', definition: 'friend', level: 5, sentence: { fa: 'او بهترین دوست من است', pr: 'U behtarin duste man ast', en: 'He is my best friend' } },
+            { farsi: 'عشق', pronunciation: 'eshgh', definition: 'love', level: 5, sentence: { fa: 'عشق زیباست', pr: 'Eshgh zibā ast', en: 'Love is beautiful' } },
+            { farsi: 'زندگی', pronunciation: 'zendegi', definition: 'life', level: 5, sentence: { fa: 'زندگی زیباست', pr: 'Zendegi zibā ast', en: 'Life is beautiful' } },
+            { farsi: 'مرگ', pronunciation: 'marg', definition: 'death', level: 5, sentence: { fa: 'از مرگ نمی‌ترسم', pr: 'Az marg nemitarasam', en: 'I am not afraid of death' } },
+            { farsi: 'زمان', pronunciation: 'zamān', definition: 'time', level: 5, sentence: { fa: 'زمان طلا است', pr: 'Zamān talā ast', en: 'Time is gold' } },
+            { farsi: 'مکان', pronunciation: 'makān', definition: 'place', level: 5, sentence: { fa: 'این مکان آشناست', pr: 'In makān āshenā ast', en: 'This place is familiar' } },
+            { farsi: 'کشور', pronunciation: 'keshvar', definition: 'country', level: 5, sentence: { fa: 'ایران کشور زیبایی است', pr: 'Irān keshvar zibāyi ast', en: 'Iran is a beautiful country' } },
+            { farsi: 'شهر', pronunciation: 'shahr', definition: 'city', level: 5, sentence: { fa: 'تهران شهر بزرگی است', pr: 'Tehrān shahr bozorgi ast', en: 'Tehran is a big city' } },
+            { farsi: 'روستا', pronunciation: 'rustā', definition: 'village', level: 5, sentence: { fa: 'در روستا آرامش است', pr: 'Dar rustā ārāmesh ast', en: 'There is peace in the village' } },
+            { farsi: 'خانه', pronunciation: 'khāne', definition: 'house, home', level: 5, sentence: { fa: 'به خانه خوش آمدی', pr: 'Be khāne khosh āmadi', en: 'Welcome home' } },
+            { farsi: 'مدرسه', pronunciation: 'madrese', definition: 'school', level: 5, sentence: { fa: 'به مدرسه می‌روم', pr: 'Be madrese miravam', en: 'I go to school' } },
+            { farsi: 'دانشگاه', pronunciation: 'dāneshgāh', definition: 'university', level: 5, sentence: { fa: 'در دانشگاه درس می‌خوانم', pr: 'Dar dāneshgāh dars mikhānam', en: 'I study at university' } },
+            { farsi: 'کار', pronunciation: 'kār', definition: 'work, job', level: 5, sentence: { fa: 'کارم را دوست دارم', pr: 'Kāram rā dust dāram', en: 'I like my job' } },
+            { farsi: 'پول', pronunciation: 'pool', definition: 'money', level: 5, sentence: { fa: 'پول کافی ندارم', pr: 'Pool kāfi nadāram', en: 'I don\'t have enough money' } },
+            { farsi: 'غذا', pronunciation: 'ghazā', definition: 'food', level: 5, sentence: { fa: 'غذای ایرانی خوشمزه است', pr: 'Ghazāye Irāni khoshmaze ast', en: 'Iranian food is delicious' } },
+            { farsi: 'آب', pronunciation: 'āb', definition: 'water', level: 5, sentence: { fa: 'آب می‌خواهم', pr: 'Āb mikhāham', en: 'I want water' } },
+            { farsi: 'نان', pronunciation: 'nān', definition: 'bread', level: 5, sentence: { fa: 'نان تازه بخر', pr: 'Nān tāze bokhar', en: 'Buy fresh bread' } },
+            { farsi: 'کتاب', pronunciation: 'ketāb', definition: 'book', level: 5, sentence: { fa: 'کتاب می‌خوانم', pr: 'Ketāb mikhānam', en: 'I read a book' } },
+            { farsi: 'نامه', pronunciation: 'nāme', definition: 'letter', level: 5, sentence: { fa: 'نامه‌ای برای تو نوشتم', pr: 'Nāme-i barāye to neveshtam', en: 'I wrote a letter for you' } },
+            { farsi: 'خبر', pronunciation: 'khabar', definition: 'news', level: 5, sentence: { fa: 'خبر خوبی داری؟', pr: 'Khabare khubi dāri?', en: 'Do you have good news?' } },
+            { farsi: 'داستان', pronunciation: 'dāstān', definition: 'story', level: 5, sentence: { fa: 'داستان جالبی تعریف کن', pr: 'Dāstāne jālebi ta\'rif kon', en: 'Tell an interesting story' } },
+            { farsi: 'شعر', pronunciation: 'she\'r', definition: 'poem, poetry', level: 5, sentence: { fa: 'شعر حافظ زیباست', pr: 'She\'re Hāfez zibā ast', en: 'Hafez\'s poetry is beautiful' } },
+            { farsi: 'هنر', pronunciation: 'honar', definition: 'art', level: 5, sentence: { fa: 'هنر ایرانی غنی است', pr: 'Honare Irāni ghani ast', en: 'Iranian art is rich' } },
+            { farsi: 'فرهنگ', pronunciation: 'farhang', definition: 'culture', level: 5, sentence: { fa: 'فرهنگ ایران قدیمی است', pr: 'Farhange Irān ghadimi ast', en: 'Iranian culture is ancient' } },
+            { farsi: 'تاریخ', pronunciation: 'tārikh', definition: 'history, date', level: 5, sentence: { fa: 'تاریخ ایران طولانی است', pr: 'Tārikhe Irān tulāni ast', en: 'Iran\'s history is long' } },
+            { farsi: 'سیاست', pronunciation: 'siāsat', definition: 'politics', level: 5, sentence: { fa: 'به سیاست علاقه دارم', pr: 'Be siāsat alāghe dāram', en: 'I am interested in politics' } },
+            { farsi: 'اقتصاد', pronunciation: 'eghtesād', definition: 'economy', level: 5, sentence: { fa: 'اقتصاد مهم است', pr: 'Eghtesād mohem ast', en: 'Economy is important' } },
+            { farsi: 'اجتماع', pronunciation: 'ejtemā\'', definition: 'society', level: 5, sentence: { fa: 'در اجتماع زندگی می‌کنیم', pr: 'Dar ejtemā\' zendegi mikonim', en: 'We live in society' } },
+            { farsi: 'طبیعت', pronunciation: 'tabi\'at', definition: 'nature', level: 5, sentence: { fa: 'طبیعت زیباست', pr: 'Tabi\'at zibā ast', en: 'Nature is beautiful' } },
+            { farsi: 'جهان', pronunciation: 'jahān', definition: 'world', level: 5, sentence: { fa: 'جهان بزرگ است', pr: 'Jahān bozorg ast', en: 'The world is big' } },
+            { farsi: 'انسان', pronunciation: 'ensān', definition: 'human', level: 5, sentence: { fa: 'انسان موجود فکرکننده است', pr: 'Ensān majud fekorkonande ast', en: 'Human is a thinking being' } }
+        ];
+
+        // Application State
+        let currentCardIndex = 0;
+        let filteredCards = [...farsiData];
+        let learnedCards = new Set();
+        let currentLevel = 'all';
+        let revealStage = 0; // 0 = initial, 1 = pronunciation revealed, 2 = definition revealed, 3 = sentence revealed
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProgress();
+            renderCardGrid();
+            updateStats();
+            displayCard(0);
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Card flip on click/tap
+            const flashcard = document.getElementById('flashcard');
+            flashcard.addEventListener('click', handleCardClick);
+
+            // Keyboard navigation
+            document.addEventListener('keydown', (e) => {
+                if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    handleCardClick();
+                } else if (e.key === 'ArrowLeft') {
+                    nextCard();
+                } else if (e.key === 'ArrowRight') {
+                    previousCard();
+                } else if (e.key >= '1' && e.key <= '4') {
+                    const grades = ['again', 'hard', 'good', 'easy'];
+                    gradeCard(grades[parseInt(e.key) - 1]);
+                }
+            });
+
+            // Level filters
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentLevel = btn.dataset.level;
+                    filterCards();
+                });
+            });
+        }
+
+        function handleCardClick() {
+            const flashcard = document.getElementById('flashcard');
+
+            if (revealStage === 0) {
+                // First click: reveal pronunciation
+                document.getElementById('frontPronunciation').classList.add('revealed');
+                revealStage = 1;
+            } else if (revealStage === 1) {
+                // Second click: reveal definition
+                document.getElementById('frontDefinition').classList.add('revealed');
+                revealStage = 2;
+            } else if (revealStage === 2) {
+                // Third click: flip to show sentence
+                flashcard.classList.add('flipped');
+                setTimeout(() => {
+                    document.getElementById('sentenceSection').classList.add('revealed');
+                }, 300);
+                revealStage = 3;
+            } else if (revealStage === 3) {
+                // Fourth click: reset card
+                resetCardState();
+            }
+        }
+
+        function resetCardState() {
+            const flashcard = document.getElementById('flashcard');
+            flashcard.classList.remove('flipped');
+
+            setTimeout(() => {
+                document.getElementById('frontPronunciation').classList.remove('revealed');
+                document.getElementById('frontDefinition').classList.remove('revealed');
+                document.getElementById('sentenceSection').classList.remove('revealed');
+                revealStage = 0;
+            }, 300);
+        }
+
+        function displayCard(index) {
+            if (filteredCards.length === 0) return;
+
+            const card = filteredCards[index];
+            const flashcard = document.getElementById('flashcard');
+
+            // Reset card state completely
+            resetCardState();
+
+            // Small delay to allow flip reset before content change
+            setTimeout(() => {
+                document.getElementById('frontFarsi').textContent = card.farsi;
+                document.getElementById('frontPronunciation').textContent = card.pronunciation;
+                document.getElementById('frontDefinition').textContent = card.definition;
+
+                document.getElementById('backSentenceFa').textContent = card.sentence.fa;
+                document.getElementById('backSentencePr').textContent = card.sentence.pr;
+                document.getElementById('backSentenceEn').textContent = card.sentence.en;
+
+                // Update grid highlighting
+                updateGridHighlight(index);
+
+                // Update nav buttons
+                document.getElementById('prevBtn').disabled = index === 0;
+                document.getElementById('nextBtn').disabled = index === filteredCards.length - 1;
+
+                currentCardIndex = index;
+            }, 150);
+        }
+
+        function nextCard() {
+            if (currentCardIndex < filteredCards.length - 1) {
+                displayCard(currentCardIndex + 1);
+            }
+        }
+
+        function previousCard() {
+            if (currentCardIndex > 0) {
+                displayCard(currentCardIndex - 1);
+            }
+        }
+
+        function gradeCard(grade) {
+            const card = filteredCards[currentCardIndex];
+
+            if (grade === 'easy' || grade === 'good') {
+                learnedCards.add(card.farsi);
+                saveProgress();
+                renderCardGrid();
+                updateStats();
+            }
+
+            // Visual feedback
+            const flashcard = document.getElementById('flashcard');
+            flashcard.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                flashcard.style.transform = '';
+                if (currentCardIndex < filteredCards.length - 1) {
+                    nextCard();
+                }
+            }, 200);
+        }
+
+        function filterCards() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            filteredCards = farsiData.filter(card => {
+                const matchesLevel = currentLevel === 'all' || card.level.toString() === currentLevel;
+                const matchesSearch = !searchTerm ||
+                    card.farsi.includes(searchTerm) ||
+                    card.pronunciation.toLowerCase().includes(searchTerm) ||
+                    card.definition.toLowerCase().includes(searchTerm);
+                return matchesLevel && matchesSearch;
+            });
+
+            renderCardGrid();
+
+            if (filteredCards.length > 0) {
+                displayCard(0);
+            }
+
+            document.getElementById('cardCount').textContent = `${filteredCards.length} cards`;
+        }
+
+        function renderCardGrid() {
+            const grid = document.getElementById('cardGrid');
+            grid.innerHTML = '';
+
+            filteredCards.forEach((card, index) => {
+                const gridCard = document.createElement('div');
+                gridCard.className = 'grid-card';
+                gridCard.textContent = card.farsi;
+
+                if (learnedCards.has(card.farsi)) {
+                    gridCard.classList.add('learned');
+                }
+
+                if (index === currentCardIndex) {
+                    gridCard.classList.add('active');
+                }
+
+                gridCard.addEventListener('click', () => {
+                    displayCard(index);
+                });
+
+                grid.appendChild(gridCard);
+            });
+        }
+
+        function updateGridHighlight(index) {
+            const gridCards = document.querySelectorAll('.grid-card');
+            gridCards.forEach((card, i) => {
+                card.classList.toggle('active', i === index);
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('totalCards').textContent = farsiData.length;
+            document.getElementById('learnedCards').textContent = learnedCards.size;
+
+            const levelCounts = {};
+            learnedCards.forEach(farsi => {
+                const card = farsiData.find(c => c.farsi === farsi);
+                if (card) {
+                    levelCounts[card.level] = (levelCounts[card.level] || 0) + 1;
+                }
+            });
+
+            const maxLevel = Math.max(...Object.keys(levelCounts).map(Number), 0);
+            document.getElementById('currentLevel').textContent = maxLevel > 0 ? `Level ${maxLevel}` : 'Level 1';
+        }
+
+        function shuffleCards() {
+            for (let i = filteredCards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [filteredCards[i], filteredCards[j]] = [filteredCards[j], filteredCards[i]];
+            }
+            renderCardGrid();
+            displayCard(0);
+        }
+
+        function resetProgress() {
+            if (confirm('Are you sure you want to reset all progress?')) {
+                learnedCards.clear();
+                saveProgress();
+                renderCardGrid();
+                updateStats();
+            }
+        }
+
+        function saveProgress() {
+            localStorage.setItem('farsiLearnedCards', JSON.stringify([...learnedCards]));
+        }
+
+        function loadProgress() {
+            const saved = localStorage.getItem('farsiLearnedCards');
+            if (saved) {
+                learnedCards = new Set(JSON.parse(saved));
+            }
+        }
+    </script>
+</body>
+</html>
