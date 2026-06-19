@@ -168,12 +168,22 @@
             width: 100%;
         }
 
-        .hanzi {
-            font-size: 5rem;
-            font-weight: 300;
+        .hanzi-container {
             margin-bottom: 1rem;
+        }
+
+        .hanzi {
+            font-size: 4rem;
+            font-weight: 300;
             line-height: 1.2;
             color: var(--text-primary);
+        }
+
+        .traditional {
+            font-size: 2rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            font-weight: 300;
         }
 
         .pinyin {
@@ -181,6 +191,14 @@
             color: var(--accent);
             margin-bottom: 0.5rem;
             font-weight: 500;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        .pinyin.revealed {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         .definition {
@@ -188,6 +206,29 @@
             color: var(--text-secondary);
             line-height: 1.6;
             margin-bottom: 1.5rem;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        .definition.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .sentence-section {
+            width: 100%;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s ease;
+            max-height: 0;
+            overflow: hidden;
+        }
+
+        .sentence-section.revealed {
+            opacity: 1;
+            transform: translateY(0);
+            max-height: 300px;
         }
 
         .sentence-chinese {
@@ -609,20 +650,25 @@
                 <div class="flashcard" id="flashcard">
                     <div class="card-face card-front">
                         <div class="card-content">
-                            <div class="hanzi" id="frontHanzi">汉</div>
+                            <div class="hanzi-container">
+                                <div class="hanzi" id="frontHanzi">汉</div>
+                                <div class="traditional" id="frontTraditional">漢</div>
+                            </div>
                             <div class="pinyin" id="frontPinyin">hàn</div>
                             <div class="definition" id="frontDefinition">Chinese character</div>
                         </div>
                         <div class="reveal-hint">
                             <span class="hint-icon">👆</span>
-                            <span>Tap or Click to Reveal</span>
+                            <span>Tap to Reveal</span>
                         </div>
                     </div>
                     <div class="card-face card-back">
                         <div class="card-content">
-                            <div class="sentence-chinese" id="backSentenceZh"></div>
-                            <div class="sentence-pinyin" id="backSentencePy"></div>
-                            <div class="sentence-english" id="backSentenceEn"></div>
+                            <div class="sentence-section" id="sentenceSection">
+                                <div class="sentence-chinese" id="backSentenceZh"></div>
+                                <div class="sentence-pinyin" id="backSentencePy"></div>
+                                <div class="sentence-english" id="backSentenceEn"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -812,6 +858,7 @@
         let filteredCards = [...hskData];
         let learnedCards = new Set();
         let currentLevel = 'all';
+        let revealStage = 0; // 0 = initial, 1 = pinyin revealed, 2 = definition revealed, 3 = sentence revealed
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -825,13 +872,13 @@
         function setupEventListeners() {
             // Card flip on click/tap
             const flashcard = document.getElementById('flashcard');
-            flashcard.addEventListener('click', flipCard);
+            flashcard.addEventListener('click', handleCardClick);
             
             // Keyboard navigation
             document.addEventListener('keydown', (e) => {
                 if (e.key === ' ' || e.key === 'Enter') {
                     e.preventDefault();
-                    flipCard();
+                    handleCardClick();
                 } else if (e.key === 'ArrowLeft') {
                     previousCard();
                 } else if (e.key === 'ArrowRight') {
@@ -853,9 +900,40 @@
             });
         }
 
-        function flipCard() {
+        function handleCardClick() {
             const flashcard = document.getElementById('flashcard');
-            flashcard.classList.toggle('flipped');
+            
+            if (revealStage === 0) {
+                // First click: reveal pinyin
+                document.getElementById('frontPinyin').classList.add('revealed');
+                revealStage = 1;
+            } else if (revealStage === 1) {
+                // Second click: reveal definition
+                document.getElementById('frontDefinition').classList.add('revealed');
+                revealStage = 2;
+            } else if (revealStage === 2) {
+                // Third click: flip to show sentence
+                flashcard.classList.add('flipped');
+                setTimeout(() => {
+                    document.getElementById('sentenceSection').classList.add('revealed');
+                }, 300);
+                revealStage = 3;
+            } else if (revealStage === 3) {
+                // Fourth click: reset card
+                resetCardState();
+            }
+        }
+
+        function resetCardState() {
+            const flashcard = document.getElementById('flashcard');
+            flashcard.classList.remove('flipped');
+            
+            setTimeout(() => {
+                document.getElementById('frontPinyin').classList.remove('revealed');
+                document.getElementById('frontDefinition').classList.remove('revealed');
+                document.getElementById('sentenceSection').classList.remove('revealed');
+                revealStage = 0;
+            }, 300);
         }
 
         function displayCard(index) {
@@ -864,12 +942,23 @@
             const card = filteredCards[index];
             const flashcard = document.getElementById('flashcard');
             
-            // Reset flip state
-            flashcard.classList.remove('flipped');
+            // Reset card state completely
+            resetCardState();
             
             // Small delay to allow flip reset before content change
             setTimeout(() => {
                 document.getElementById('frontHanzi').textContent = card.hanzi;
+                
+                // Add traditional character if different from simplified
+                const traditionalEl = document.getElementById('frontTraditional');
+                const traditionalChar = getTraditionalChar(card.hanzi);
+                if (traditionalChar && traditionalChar !== card.hanzi) {
+                    traditionalEl.textContent = traditionalChar;
+                    traditionalEl.style.display = 'block';
+                } else {
+                    traditionalEl.style.display = 'none';
+                }
+                
                 document.getElementById('frontPinyin').textContent = card.pinyin;
                 document.getElementById('frontDefinition').textContent = card.definition;
                 
@@ -1017,6 +1106,33 @@
             if (saved) {
                 learnedCards = new Set(JSON.parse(saved));
             }
+        }
+
+        // Simplified to Traditional character mapping for common HSK characters
+        function getTraditionalChar(simplified) {
+            const tradMap = {
+                '的': '的', '一': '一', '是': '是', '不': '不', '了': '了',
+                '人': '人', '在': '在', '我': '我', '有': '有', '他': '他',
+                '这': '這', '中': '中', '来': '來', '上': '上', '大': '大',
+                '国': '國', '个': '個', '到': '到', '说': '說', '们': '們',
+                '去': '去', '要': '要', '没': '沒', '为': '為', '就': '就',
+                '学': '學', '会': '會', '对': '對', '能': '能', '发': '發',
+                '下': '下', '过': '過', '起': '起', '都': '都', '和': '和',
+                '那': '那', '也': '也', '着': '著', '以': '以', '而': '而',
+                '后': '後', '里': '裡', '用': '用', '道': '道', '行': '行',
+                '所': '所', '然': '然', '家': '家', '种': '種', '事': '事',
+                '成': '成', '方': '方', '多': '多', '经': '經', '么': '麼',
+                '之': '之', '法': '法', '如': '如', '其': '其', '想': '想',
+                '作': '作', '好': '好', '看': '看', '自': '自', '己': '己',
+                '手': '手', '生': '生', '心': '心', '头': '頭', '身': '身',
+                '本': '本', '前': '前', '力': '力', '原': '原', '因': '因',
+                '最': '最', '长': '長', '从': '從', '知': '知', '理': '理',
+                '气': '氣', '当': '當', '两': '兩', '些': '些', '还': '還',
+                '时': '時', '体': '體', '高': '高', '电': '電', '场': '場',
+                '进': '進', '出': '出', '小': '小', '口': '口', '山': '山',
+                '水': '水', '火': '火', '木': '木', '金': '金', '土': '土'
+            };
+            return tradMap[simplified] || null;
         }
     </script>
 </body>
