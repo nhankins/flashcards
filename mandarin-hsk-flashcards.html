@@ -175,29 +175,36 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1.25rem;
     position: relative;
     z-index: 1;
-    isolation: isolate;
   }
 
   .card-counter {
     font-size: 0.75rem;
     color: var(--muted);
     letter-spacing: 0.08em;
+    margin-bottom: 0.25rem;
+  }
+
+  /* Wrapper to reserve space for card + buttons */
+  .card-wrapper {
+    width: var(--card-w);
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
   }
 
   /* Flip card */
   .scene {
-    width: var(--card-w);
-    max-width: 100%;
+    width: 100%;
     height: var(--card-h);
     perspective: 1000px;
     perspective-origin: 50% 50%;
     cursor: pointer;
     position: relative;
-    z-index: 0;
-    margin-bottom: 0.5rem;
   }
 
   .card {
@@ -305,11 +312,11 @@
     background: #1a1916;
     display: flex;
     flex-direction: column;
-    padding: 1.75rem 2rem;
-    gap: 0.75rem;
+    padding: 1.5rem 1.75rem;
+    gap: 0.6rem;
     position: relative;
-    max-height: var(--card-h);
-    overflow: hidden;
+    height: 100%;
+    overflow-y: auto;
   }
 
   .card-back::before {
@@ -658,36 +665,38 @@
 <div class="card-stage">
   <div class="card-counter" id="cardCounter">Card 0 of 0</div>
 
-  <div class="scene" id="scene" onclick="flipCard()">
-    <div class="card" id="theCard">
-      <div class="card-face card-front" id="cardFront">
-        <div class="card-level-badge" id="frontBadge">—</div>
-        <div class="hanzi-main" id="frontHanzi">—</div>
-        <div class="pinyin-main" id="frontPinyin">—</div>
-        <div class="hint-tap">tap to reveal</div>
-      </div>
-      <div class="card-face card-back" id="cardBack">
-        <div class="back-header">
-          <div class="hanzi-back" id="backHanzi">—</div>
-          <div class="pinyin-back" id="backPinyin">—</div>
+  <div class="card-wrapper">
+    <div class="scene" id="scene" onclick="flipCard()">
+      <div class="card" id="theCard">
+        <div class="card-face card-front" id="cardFront">
+          <div class="card-level-badge" id="frontBadge">—</div>
+          <div class="hanzi-main" id="frontHanzi">—</div>
+          <div class="pinyin-main" id="frontPinyin">—</div>
+          <div class="hint-tap">tap to reveal</div>
         </div>
-        <div class="meaning-back" id="backMeaning">—</div>
-        <div class="example-block" id="exampleBlock">
-          <div class="ex-size-controls">
-            <button class="ex-size-btn" onclick="changeExSize(-1);event.stopPropagation();" title="Smaller">A−</button>
-            <button class="ex-size-btn" onclick="changeExSize(1);event.stopPropagation();"  title="Larger">A+</button>
+        <div class="card-face card-back" id="cardBack">
+          <div class="back-header">
+            <div class="hanzi-back" id="backHanzi">—</div>
+            <div class="pinyin-back" id="backPinyin">—</div>
           </div>
-          <div class="ex-hanzi" id="exHanzi">—</div>
-          <div class="ex-pinyin" id="exPinyin">—</div>
-          <div class="ex-english" id="exEn">—</div>
+          <div class="meaning-back" id="backMeaning">—</div>
+          <div class="example-block" id="exampleBlock">
+            <div class="ex-size-controls">
+              <button class="ex-size-btn" onclick="changeExSize(-1);event.stopPropagation();" title="Smaller">A−</button>
+              <button class="ex-size-btn" onclick="changeExSize(1);event.stopPropagation();"  title="Larger">A+</button>
+            </div>
+            <div class="ex-hanzi" id="exHanzi">—</div>
+            <div class="ex-pinyin" id="exPinyin">—</div>
+            <div class="ex-english" id="exEn">—</div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="grade-buttons" id="gradeButtons" style="visibility:hidden; width: var(--card-w); max-width:100%;">
-    <button class="grade-btn no" onclick="gradeCard(false)">✕ &nbsp;Still learning</button>
-    <button class="grade-btn yes" onclick="gradeCard(true)">✓ &nbsp;Got it</button>
+    <div class="grade-buttons" id="gradeButtons" style="visibility:hidden;">
+      <button class="grade-btn no" onclick="gradeCard(false)">✕ &nbsp;Still learning</button>
+      <button class="grade-btn yes" onclick="gradeCard(true)">✓ &nbsp;Got it</button>
+    </div>
   </div>
 
   <div class="nav-controls">
@@ -949,7 +958,49 @@ const VOCAB = [
 {level:6,hanzi:"坚韧",pinyin:"jiānrèn",meaning:"tenacious; persevering",ex:"他有着坚韧不拔的精神。",exPinyin:"Tā yǒuzhe jiānrèn bù bá de jīngshén.",exEn:"He has a tenacious spirit."},
 {level:6,hanzi:"睿智",pinyin:"ruìzhì",meaning:"wise; wise and far-sighted",ex:"这位长者非常睿智。",exPinyin:"Zhè wèi zhǎngzhě fēicháng ruìzhì.",exEn:"This elder is very wise."},
 {level:6,hanzi:"博大",pinyin:"bódà",meaning:"broad; extensive",ex:"中华文化博大精深。",exPinyin:"Zhōnghuá wénhuà bódà jīngshēn.",exEn:"Chinese culture is broad and profound."},
-{level:6,hanzi:"典雅",pinyin:"diǎnyǎ",meaning:"elegant; refined",ex:"这座建筑典雅大方。",exPinyin:"Zhè zuò jiànzhù diǎnyǎ dàfāng.",exEn:"This building is elegant and graceful."}
+{level:6,hanzi:"典雅",pinyin:"diǎnyǎ",meaning:"elegant; refined",ex:"这座建筑典雅大方。",exPinyin:"Zhè zuò jiànzhù diǎnyǎ dàfāng.",exEn:"This building is elegant and graceful."},
+// Additional HSK 1-2 (common daily words)
+{level:1,hanzi:"人",pinyin:"rén",meaning:"person; people",ex:"他是好人。",exPinyin:"Tā shì hǎo rén.",exEn:"He is a good person."},
+{level:1,hanzi:"大",pinyin:"dà",meaning:"big; large",ex:"这个苹果很大。",exPinyin:"Zhège píngguǒ hěn dà.",exEn:"This apple is very big."},
+{level:1,hanzi:"中",pinyin:"zhōng",meaning:"middle; center",ex:"中国在北京。",exPinyin:"Zhōngguó zài Běijīng.",exEn:"China is in Beijing."},
+{level:1,hanzi:"上",pinyin:"shàng",meaning:"up; above",ex:"书在桌子上。",exPinyin:"Shū zài zhuōzi shàng.",exEn:"The book is on the table."},
+{level:1,hanzi:"下",pinyin:"xià",meaning:"down; below",ex:"猫在椅子下。",exPinyin:"Māo zài yǐzi xià.",exEn:"The cat is under the chair."},
+{level:1,hanzi:"门",pinyin:"mén",meaning:"door; gate",ex:"请关门。",exPinyin:"Qǐng guān mén.",exEn:"Please close the door."},
+{level:1,hanzi:"口",pinyin:"kǒu",meaning:"mouth",ex:"他张开嘴巴。",exPinyin:"Tā zhāngkāi zuǐba.",exEn:"He opened his mouth."},
+{level:1,hanzi:"日",pinyin:"rì",meaning:"sun; day",ex:"日出很美。",exPinyin:"Rìchū hěn měi.",exEn:"The sunrise is beautiful."},
+{level:1,hanzi:"月",pinyin:"yuè",meaning:"moon; month",ex:"月亮很圆。",exPinyin:"Yuèliang hěn yuán.",exEn:"The moon is very round."},
+{level:1,hanzi:"山",pinyin:"shān",meaning:"mountain",ex:"那座山很高。",exPinyin:"Nà zuò shān hěn gāo.",exEn:"That mountain is very high."},
+{level:2,hanzi:"身体",pinyin:"shēntǐ",meaning:"body; health",ex:"他的身体很好。",exPinyin:"Tā de shēntǐ hěn hǎo.",exEn:"His health is very good."},
+{level:2,hanzi:"名字",pinyin:"míngzi",meaning:"name",ex:"你的名字是什么？",exPinyin:"Nǐ de míngzi shì shénme?",exEn:"What is your name?"},
+{level:2,hanzi:"东西",pinyin:"dōngxi",meaning:"thing; stuff",ex:"这是什么东西？",exPinyin:"Zhè shì shénme dōngxi?",exEn:"What is this thing?"},
+{level:2,hanzi:"地方",pinyin:"dìfang",meaning:"place",ex:"这是个好地方。",exPinyin:"Zhè shì gè hǎo dìfang.",exEn:"This is a good place."},
+{level:2,hanzi:"时候",pinyin:"shíhou",meaning:"time; when",ex:"什么时候吃饭？",exPinyin:"Shénme shíhou chīfàn?",exEn:"When do we eat?"},
+{level:2,hanzi:"工作",pinyin:"gōngzuò",meaning:"work; job",ex:"他的工作很忙。",exPinyin:"Tā de gōngzuò hěn máng.",exEn:"His job is very busy."},
+{level:2,hanzi:"学习",pinyin:"xuéxí",meaning:"to study; learn",ex:"我每天学习中文。",exPinyin:"Wǒ měitiān xuéxí Zhōngwén.",exEn:"I study Chinese every day."},
+{level:2,hanzi:"休息",pinyin:"xiūxi",meaning:"to rest",ex:"我需要休息一下。",exPinyin:"Wǒ xūyào xiūxi yíxià.",exEn:"I need to rest a bit."},
+{level:2,hanzi:"帮助",pinyin:"bāngzhù",meaning:"help; assist",ex:"谢谢你的帮助。",exPinyin:"Xièxie nǐ de bāngzhù.",exEn:"Thank you for your help."},
+{level:2,hanzi:"欢迎",pinyin:"huānyíng",meaning:"welcome",ex:"欢迎光临！",exPinyin:"Huānyíng guānglín!",exEn:"Welcome!"},
+// Additional HSK 3-4 (intermediate)
+{level:3,hanzi:"环境",pinyin:"huánjìng",meaning:"environment",ex:"保护环境很重要。",exPinyin:"Bǎohù huánjìng hěn zhòngyào.",exEn:"Protecting the environment is very important."},
+{level:3,hanzi:"污染",pinyin:"wūrǎn",meaning:"pollution",ex:"空气污染很严重。",exPinyin:"Kōngqì wūrǎn hěn yánzhòng.",exEn:"Air pollution is very serious."},
+{level:3,hanzi:"节约",pinyin:"jiéyuē",meaning:"save; economize",ex:"我们要节约用水。",exPinyin:"Wǒmen yào jiéyuē yòngshuǐ.",exEn:"We should save water."},
+{level:3,hanzi:"浪费",pinyin:"làngfèi",meaning:"waste",ex:"不要浪费时间。",exPinyin:"Bú yào làngfèi shíjiān.",exEn:"Don't waste time."},
+{level:3,hanzi:"习惯",pinyin:"xíguàn",meaning:"habit; custom",ex:"早睡早起是好习惯。",exPinyin:"Zǎo shuì zǎo qǐ shì hǎo xíguàn.",exEn:"Early to bed and early to rise is a good habit."},
+{level:3,hanzi:"态度",pinyin:"tàidù",meaning:"attitude",ex:"他的态度很好。",exPinyin:"Tā de tàidù hěn hǎo.",exEn:"His attitude is very good."},
+{level:3,hanzi:"认真",pinyin:"rènzhēn",meaning:"serious; earnest",ex:"他学习很认真。",exPinyin:"Tā xuéxí hěn rènzhēn.",exEn:"He studies very seriously."},
+{level:3,hanzi:"马虎",pinyin:"mǎhu",meaning:"careless; sloppy",ex:"不要太马虎。",exPinyin:"Bú yào tài mǎhu.",exEn:"Don't be too careless."},
+{level:3,hanzi:"耐心",pinyin:"nàixīn",meaning:"patience; patient",ex:"教孩子需要耐心。",exPinyin:"Jiào háizi xūyào nàixīn.",exEn:"Teaching children requires patience."},
+{level:3,hanzi:"信心",pinyin:"xìnxīn",meaning:"confidence",ex:"要有信心。",exPinyin:"Yào yǒu xìnxīn.",exEn:"Have confidence."},
+{level:4,hanzi:"效率",pinyin:"xiàolǜ",meaning:"efficiency",ex:"提高工作效率。",exPinyin:"Tígāo gōngzuò xiàolǜ.",exEn:"Improve work efficiency."},
+{level:4,hanzi:"质量",pinyin:"zhìliàng",meaning:"quality",ex:"质量第一。",exPinyin:"Zhìliàng dì-yī.",exEn:"Quality first."},
+{level:4,hanzi:"数量",pinyin:"shùliàng",meaning:"quantity; amount",ex:"数量很多。",exPinyin:"Shùliàng hěn duō.",exEn:"The quantity is very large."},
+{level:4,hanzi:"价格",pinyin:"jiàgé",meaning:"price",ex:"价格太贵了。",exPinyin:"Jiàgé tài guì le.",exEn:"The price is too expensive."},
+{level:4,hanzi:"价值",pinyin:"jiàzhí",meaning:"value; worth",ex:"这本书很有价值。",exPinyin:"Zhè běn shū hěn yǒu jiàzhí.",exEn:"This book is very valuable."},
+{level:4,hanzi:"意义",pinyin:"yìyì",meaning:"meaning; significance",ex:"这句话很有意义。",exPinyin:"Zhè jù huà hěn yǒu yìyì.",exEn:"This sentence is very meaningful."},
+{level:4,hanzi:"目的",pinyin:"mùdì",meaning:"purpose; goal",ex:"你的目的是什么？",exPinyin:"Nǐ de mùdì shì shénme?",exEn:"What is your purpose?"},
+{level:4,hanzi:"方法",pinyin:"fāngfǎ",meaning:"method; way",ex:"找到好方法。",exPinyin:"Zhǎodào hǎo fāngfǎ.",exEn:"Find a good method."},
+{level:4,hanzi:"经验",pinyin:"jīngyàn",meaning:"experience",ex:"他有丰富的经验。",exPinyin:"Tā yǒu fēngfù de jīngyàn.",exEn:"He has rich experience."},
+{level:4,hanzi:"教训",pinyin:"jiàoxùn",meaning:"lesson; moral",ex:"吸取教训。",exPinyin:"Xīqǔ jiàoxùn.",exEn:"Learn from the lesson."}
 ];
 
 // State
