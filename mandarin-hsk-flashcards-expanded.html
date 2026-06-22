@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSK Mastery - Flashcards</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f0e0d;
+            --bg-secondary: #1a1916;
+            --bg-card: #252420;
+            --text-primary: #f5f5f5;
+            --text-secondary: #a8a8a8;
+            --accent: #c44536;
+            --accent-hover: #e05544;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --border: rgba(255, 255, 255, 0.08);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent), #ff6b5b);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .brand h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff, #ccc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            min-height: calc(100vh - 80px);
+        }
+
+        /* Left Panel - Card Area */
+        .card-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .card-stage {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1000px;
+            min-height: 500px;
+        }
+
+        .flashcard {
+            width: 100%;
+            max-width: 500px;
+            height: 400px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            overflow: hidden;
+        }
+
+        .card-front {
+            background: linear-gradient(135deg, var(--bg-card), var(--bg-secondary));
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+        }
+
+        .card-content {
+            text-align: center;
+            width: 100%;
+        }
+
+        .hanzi-container {
+            margin-bottom: 1rem;
+        }
+
+        .hanzi {
+            font-size: 4rem;
+            font-weight: 300;
+            line-height: 1.2;
+            color: var(--text-primary);
+        }
+
+        .traditional {
+            font-size: 2rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            font-weight: 300;
+        }
+
+        .pinyin {
+            font-size: 1.5rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        .pinyin.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .definition {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        .definition.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .sentence-section {
+            width: 100%;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s ease;
+            max-height: 0;
+            overflow: hidden;
+        }
+
+        .sentence-section.revealed {
+            opacity: 1;
+            transform: translateY(0);
+            max-height: 300px;
+        }
+
+        .sentence-chinese {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            line-height: 1.6;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .sentence-pinyin {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            font-style: italic;
+        }
+
+        .sentence-english {
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            line-height: 1.5;
+            padding: 1rem;
+            background: rgba(76, 175, 80, 0.1);
+            border-radius: 10px;
+            border-left: 3px solid var(--success);
+        }
+
+        .reveal-hint {
+            position: absolute;
+            bottom: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+
+        .flashcard:hover .reveal-hint {
+            opacity: 1;
+        }
+
+        .hint-icon {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+
+        /* Controls */
+        .controls-area {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .grade-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
+        }
+
+        .grade-btn {
+            padding: 1rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .grade-again {
+            background: rgba(244, 67, 54, 0.15);
+            color: #f44336;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+
+        .grade-hard {
+            background: rgba(255, 152, 0, 0.15);
+            color: var(--warning);
+            border: 1px solid rgba(255, 152, 0, 0.3);
+        }
+
+        .grade-good {
+            background: rgba(76, 175, 80, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .grade-easy {
+            background: rgba(33, 150, 243, 0.15);
+            color: #2196f3;
+            border: 1px solid rgba(33, 150, 243, 0.3);
+        }
+
+        .grade-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.2);
+        }
+
+        .grade-btn:active {
+            transform: translateY(0);
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+
+        .nav-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-btn:hover {
+            background: var(--bg-card);
+            border-color: var(--accent);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Right Panel - Sidebar */
+        .sidebar {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .filter-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(196, 69, 54, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        .level-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .level-btn {
+            padding: 0.5rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .level-btn:hover {
+            border-color: var(--text-secondary);
+        }
+
+        .level-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 0.5rem;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .grid-card {
+            aspect-ratio: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .grid-card:hover {
+            border-color: var(--accent);
+            transform: scale(1.05);
+        }
+
+        .grid-card.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .grid-card.learned {
+            border-color: var(--success);
+        }
+
+        .grid-card.learned::after {
+            content: '✓';
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            font-size: 0.6rem;
+            color: var(--success);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 0.75rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1100px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                max-height: none;
+            }
+
+            .card-stage {
+                min-height: 400px;
+            }
+
+            .flashcard {
+                height: 350px;
+            }
+
+            .hanzi {
+                font-size: 4rem;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header {
+                padding: 1rem;
+            }
+
+            .stats-bar {
+                gap: 1rem;
+            }
+
+            .main-container {
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .flashcard {
+                height: 320px;
+            }
+
+            .hanzi {
+                font-size: 3.5rem;
+            }
+
+            .grade-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-in {
+            animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="brand">
+            <div class="brand-icon">汉</div>
+            <h1>HSK Mastery</h1>
+        </div>
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="totalCards">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="learnedCards">0</div>
+                <div class="stat-label">Learned</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="currentLevel">HSK 1</div>
+                <div class="stat-label">Level</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <div class="card-panel">
+            <div class="card-stage">
+                <div class="flashcard" id="flashcard">
+                    <div class="card-face card-front">
+                        <div class="card-content">
+                            <div class="hanzi-container">
+                                <div class="hanzi" id="frontHanzi">汉</div>
+                                <div class="traditional" id="frontTraditional">漢</div>
+                            </div>
+                            <div class="pinyin" id="frontPinyin">hàn</div>
+                            <div class="definition" id="frontDefinition">Chinese character</div>
+                        </div>
+                        <div class="reveal-hint">
+                            <span class="hint-icon">👆</span>
+                            <span>Tap to Reveal</span>
+                        </div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div class="card-content">
+                            <div class="sentence-section" id="sentenceSection">
+                                <div class="sentence-chinese" id="backSentenceZh"></div>
+                                <div class="sentence-pinyin" id="backSentencePy"></div>
+                                <div class="sentence-english" id="backSentenceEn"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls-area">
+                <div class="grade-buttons">
+                    <button class="grade-btn grade-again" onclick="gradeCard('again')">Again</button>
+                    <button class="grade-btn grade-hard" onclick="gradeCard('hard')">Hard</button>
+                    <button class="grade-btn grade-good" onclick="gradeCard('good')">Good</button>
+                    <button class="grade-btn grade-easy" onclick="gradeCard('easy')">Easy</button>
+                </div>
+                <div class="nav-buttons">
+                    <button class="nav-btn" id="prevBtn" onclick="previousCard()">← Previous</button>
+                    <button class="nav-btn" id="nextBtn" onclick="nextCard()">Next →</button>
+                </div>
+            </div>
+        </div>
+
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2 class="sidebar-title">Card Library</h2>
+                <span id="cardCount">0 cards</span>
+            </div>
+
+            <div class="filter-controls">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search characters..." oninput="filterCards()">
+                </div>
+
+                <div class="level-filters" id="levelFilters">
+                    <button class="level-btn active" data-level="all">All</button>
+                    <button class="level-btn" data-level="1">HSK 1</button>
+                    <button class="level-btn" data-level="2">HSK 2</button>
+                    <button class="level-btn" data-level="3">HSK 3</button>
+                    <button class="level-btn" data-level="4">HSK 4</button>
+                    <button class="level-btn" data-level="5">HSK 5</button>
+                    <button class="level-btn" data-level="6">HSK 6</button>
+                </div>
+            </div>
+
+            <div class="card-grid" id="cardGrid"></div>
+
+            <div class="action-buttons">
+                <button class="action-btn" onclick="shuffleCards()">🔀 Shuffle</button>
+                <button class="action-btn" onclick="resetProgress()">↺ Reset</button>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+        // HSK Vocabulary Data
+        const hskData = [
+            { hanzi: '的', pinyin: 'de', definition: 'possessive particle', level: 1, sentence: { zh: '这是我的书。', py: 'Zhè shì wǒ de shū.', en: 'This is my book.' } },
+            { hanzi: '一', pinyin: 'yī', definition: 'one; a; an', level: 1, sentence: { zh: '我有一个苹果。', py: 'Wǒ yǒu yī gè píngguǒ.', en: 'I have an apple.' } },
+            { hanzi: '是', pinyin: 'shì', definition: 'to be; is; am; are', level: 1, sentence: { zh: '我是学生。', py: 'Wǒ shì xuésheng.', en: 'I am a student.' } },
+            { hanzi: '不', pinyin: 'bù', definition: 'not; no', level: 1, sentence: { zh: '我不是老师。', py: 'Wǒ bú shì lǎoshī.', en: 'I am not a teacher.' } },
+            { hanzi: '了', pinyin: 'le', definition: 'particle (completed action)', level: 1, sentence: { zh: '我吃饭了。', py: 'Wǒ chī fàn le.', en: 'I have eaten.' } },
+            { hanzi: '人', pinyin: 'rén', definition: 'person; people', level: 1, sentence: { zh: '他是好人。', py: 'Tā shì hǎo rén.', en: 'He is a good person.' } },
+            { hanzi: '在', pinyin: 'zài', definition: 'at; in; on', level: 1, sentence: { zh: '我在家学习。', py: 'Wǒ zài jiā xuéxí.', en: 'I study at home.' } },
+            { hanzi: '我', pinyin: 'wǒ', definition: 'I; me', level: 1, sentence: { zh: '我喜欢中文。', py: 'Wǒ xǐhuān Zhōngwén.', en: 'I like Chinese.' } },
+            { hanzi: '有', pinyin: 'yǒu', definition: 'to have; there is', level: 1, sentence: { zh: '我有时间。', py: 'Wǒ yǒu shíjiān.', en: 'I have time.' } },
+            { hanzi: '他', pinyin: 'tā', definition: 'he; him', level: 1, sentence: { zh: '他是我的朋友。', py: 'Tā shì wǒ de péngyou.', en: 'He is my friend.' } },
+            { hanzi: '这', pinyin: 'zhè', definition: 'this; these', level: 1, sentence: { zh: '这是什么？', py: 'Zhè shì shénme?', en: 'What is this?' } },
+            { hanzi: '中', pinyin: 'zhōng', definition: 'middle; center; China', level: 1, sentence: { zh: '我学中文。', py: 'Wǒ xué Zhōngwén.', en: 'I study Chinese.' } },
+            { hanzi: '来', pinyin: 'lái', definition: 'to come', level: 1, sentence: { zh: '他来北京。', py: 'Tā lái Běijīng.', en: 'He comes to Beijing.' } },
+            { hanzi: '上', pinyin: 'shàng', definition: 'up; above; go up', level: 1, sentence: { zh: '我上学。', py: 'Wǒ shàng xué.', en: 'I go to school.' } },
+            { hanzi: '大', pinyin: 'dà', definition: 'big; large', level: 1, sentence: { zh: '这个房子很大。', py: 'Zhège fángzi hěn dà.', en: 'This house is very big.' } },
+            { hanzi: '国', pinyin: 'guó', definition: 'country; nation', level: 1, sentence: { zh: '中国很大。', py: 'Zhōngguó hěn dà.', en: 'China is very large.' } },
+            { hanzi: '个', pinyin: 'gè', definition: 'measure word', level: 1, sentence: { zh: '三个人', py: 'sān gè rén', en: 'three people' } },
+            { hanzi: '到', pinyin: 'dào', definition: 'to arrive; to', level: 1, sentence: { zh: '我到学校。', py: 'Wǒ dào xuéxiào.', en: 'I arrive at school.' } },
+            { hanzi: '说', pinyin: 'shuō', definition: 'to speak; to say', level: 1, sentence: { zh: '你说中文吗？', py: 'Nǐ shuō Zhōngwén ma?', en: 'Do you speak Chinese?' } },
+            { hanzi: '们', pinyin: 'men', definition: 'plural marker for people', level: 1, sentence: { zh: '我们是学生。', py: 'Wǒmen shì xuésheng.', en: 'We are students.' } },
+            { hanzi: '二', pinyin: 'èr', definition: 'two', level: 1, sentence: { zh: '我有两个苹果。', py: 'Wǒ yǒu liǎng gè píngguǒ.', en: 'I have two apples.' } },
+            { hanzi: '三', pinyin: 'sān', definition: 'three', level: 1, sentence: { zh: '三个学生', py: 'sān gè xuésheng', en: 'three students' } },
+            { hanzi: '四', pinyin: 'sì', definition: 'four', level: 1, sentence: { zh: '四个杯子', py: 'sì gè bēizi', en: 'four cups' } },
+            { hanzi: '五', pinyin: 'wǔ', definition: 'five', level: 1, sentence: { zh: '五本书', py: 'wǔ běn shū', en: 'five books' } },
+            { hanzi: '六', pinyin: 'liù', definition: 'six', level: 1, sentence: { zh: '六点起床', py: 'liù diǎn qǐchuáng', en: 'get up at six' } },
+            { hanzi: '七', pinyin: 'qī', definition: 'seven', level: 1, sentence: { zh: '七点上班', py: 'qī diǎn shàngbān', en: 'go to work at seven' } },
+            { hanzi: '八', pinyin: 'bā', definition: 'eight', level: 1, sentence: { zh: '八点上课', py: 'bā diǎn shàngkè', en: 'have class at eight' } },
+            { hanzi: '九', pinyin: 'jiǔ', definition: 'nine', level: 1, sentence: { zh: '九点睡觉', py: 'jiǔ diǎn shuìjiào', en: 'go to bed at nine' } },
+            { hanzi: '十', pinyin: 'shí', definition: 'ten', level: 1, sentence: { zh: '十个学生', py: 'shí gè xuésheng', en: 'ten students' } },
+            { hanzi: '零', pinyin: 'líng', definition: 'zero', level: 1, sentence: { zh: '零度', py: 'líng dù', en: 'zero degrees' } },
+            { hanzi: '百', pinyin: 'bǎi', definition: 'hundred', level: 1, sentence: { zh: '一百元', py: 'yī bǎi yuán', en: 'one hundred yuan' } },
+            { hanzi: '千', pinyin: 'qiān', definition: 'thousand', level: 1, sentence: { zh: '一千米', py: 'yī qiān mǐ', en: 'one thousand meters' } },
+            { hanzi: '两', pinyin: 'liǎng', definition: 'two (used with measure words)', level: 1, sentence: { zh: '两个人', py: 'liǎng gè rén', en: 'two people' } },
+            { hanzi: '半', pinyin: 'bàn', definition: 'half', level: 1, sentence: { zh: '半个苹果', py: 'bàn gè píngguǒ', en: 'half an apple' } },
+            { hanzi: '多', pinyin: 'duō', definition: 'many; much', level: 1, sentence: { zh: '很多人', py: 'hěn duō rén', en: 'many people' } },
+            { hanzi: '少', pinyin: 'shǎo', definition: 'few; little', level: 1, sentence: { zh: '很少时间', py: 'hěn shǎo shíjiān', en: 'little time' } },
+            { hanzi: '好', pinyin: 'hǎo', definition: 'good', level: 1, sentence: { zh: '今天天气很好。', py: 'Jīntiān tiānqì hěn hǎo.', en: 'The weather is good today.' } },
+            { hanzi: '小', pinyin: 'xiǎo', definition: 'small; little', level: 1, sentence: { zh: '小猫', py: 'xiǎo māo', en: 'small cat' } },
+            { hanzi: '女', pinyin: 'nǚ', definition: 'female; woman', level: 1, sentence: { zh: '女生', py: 'nǚshēng', en: 'female student' } },
+            { hanzi: '儿', pinyin: 'ér', definition: 'child; son', level: 1, sentence: { zh: '他有儿子。', py: 'Tā yǒu érzi.', en: 'He has a son.' } },
+            { hanzi: '子', pinyin: 'zǐ', definition: 'child; son', level: 1, sentence: { zh: '孩子', py: 'háizi', en: 'child' } },
+            { hanzi: '日', pinyin: 'rì', definition: 'day; sun', level: 1, sentence: { zh: '生日', py: 'shēngrì', en: 'birthday' } },
+            { hanzi: '月', pinyin: 'yuè', definition: 'month; moon', level: 1, sentence: { zh: '一个月', py: 'yī gè yuè', en: 'one month' } },
+            { hanzi: '年', pinyin: 'nián', definition: 'year', level: 1, sentence: { zh: '新年快乐！', py: 'Xīnnián kuàilè!', en: 'Happy new year!' } },
+            { hanzi: '早上', pinyin: 'zǎoshang', definition: 'morning', level: 1, sentence: { zh: '早上好！', py: 'Zǎoshang hǎo!', en: 'Good morning!' } },
+            { hanzi: '中午', pinyin: 'zhōngwǔ', definition: 'noon; midday', level: 1, sentence: { zh: '中午吃饭。', py: 'Zhōngwǔ chī fàn.', en: 'Eat lunch at noon.' } },
+            { hanzi: '晚上', pinyin: 'wǎnshang', definition: 'evening; night', level: 1, sentence: { zh: '晚上好！', py: 'Wǎnshang hǎo!', en: 'Good evening!' } },
+            { hanzi: '米饭', pinyin: 'mǐfàn', definition: 'cooked rice', level: 1, sentence: { zh: '我喜欢吃米饭。', py: 'Wǒ xǐhuān chī mǐfàn.', en: 'I like to eat rice.' } },
+            { hanzi: '面条', pinyin: 'miàntiáo', definition: 'noodles', level: 1, sentence: { zh: '我吃面条。', py: 'Wǒ chī miàntiáo.', en: 'I eat noodles.' } },
+            { hanzi: '菜', pinyin: 'cài', definition: 'dish; vegetable', level: 1, sentence: { zh: '这个菜很好吃。', py: 'Zhège cài hěn hǎochī.', en: 'This dish is delicious.' } },
+            { hanzi: '肉', pinyin: 'ròu', definition: 'meat', level: 1, sentence: { zh: '我喜欢吃肉。', py: 'Wǒ xǐhuān chī ròu.', en: 'I like to eat meat.' } },
+            { hanzi: '鸡蛋', pinyin: 'jīdàn', definition: 'egg', level: 1, sentence: { zh: '我吃鸡蛋。', py: 'Wǒ chī jīdàn.', en: 'I eat eggs.' } },
+            { hanzi: '牛奶', pinyin: 'niúnǎi', definition: 'milk', level: 1, sentence: { zh: '我喝牛奶。', py: 'Wǒ hē niúnǎi.', en: 'I drink milk.' } },
+            { hanzi: '苹果', pinyin: 'píngguǒ', definition: 'apple', level: 1, sentence: { zh: '这个苹果很大。', py: 'Zhège píngguǒ hěn dà.', en: 'This apple is very big.' } },
+            { hanzi: '猫', pinyin: 'māo', definition: 'cat', level: 1, sentence: { zh: '一只猫', py: 'yī zhī māo', en: 'one cat' } },
+            { hanzi: '狗', pinyin: 'gǒu', definition: 'dog', level: 1, sentence: { zh: '大狗', py: 'dà gǒu', en: 'big dog' } },
+            { hanzi: '鱼', pinyin: 'yú', definition: 'fish', level: 1, sentence: { zh: '吃鱼', py: 'chī yú', en: 'eat fish' } },
+            { hanzi: '鸟', pinyin: 'niǎo', definition: 'bird', level: 1, sentence: { zh: '小鸟', py: 'xiǎo niǎo', en: 'little bird' } },
+            { hanzi: '马', pinyin: 'mǎ', definition: 'horse', level: 1, sentence: { zh: '一匹马', py: 'yī pǐ mǎ', en: 'a horse' } },
+            { hanzi: '牛', pinyin: 'niú', definition: 'cow; ox', level: 1, sentence: { zh: '一头牛', py: 'yī tóu niú', en: 'a cow' } },
+            { hanzi: '羊', pinyin: 'yáng', definition: 'sheep; goat', level: 1, sentence: { zh: '三只羊', py: 'sān zhī yáng', en: 'three sheep' } },
+            { hanzi: '手', pinyin: 'shǒu', definition: 'hand', level: 1, sentence: { zh: '我的手', py: 'Wǒ de shǒu.', en: 'my hand' } },
+            { hanzi: '口', pinyin: 'kǒu', definition: 'mouth', level: 1, sentence: { zh: '一口茶', py: 'yī kǒu chá', en: 'a mouthful of tea' } },
+            { hanzi: '眼睛', pinyin: 'yǎnjīng', definition: 'eye', level: 1, sentence: { zh: '大眼睛', py: 'dà yǎnjīng', en: 'big eyes' } },
+            { hanzi: '耳朵', pinyin: 'ěrduo', definition: 'ear', level: 1, sentence: { zh: '大耳朵', py: 'dà ěrduo', en: 'big ears' } },
+            { hanzi: '鼻子', pinyin: 'bízi', definition: 'nose', level: 1, sentence: { zh: '高鼻子', py: 'gāo bízi', en: 'high nose bridge' } },
+            { hanzi: '白', pinyin: 'bái', definition: 'white', level: 1, sentence: { zh: '白猫', py: 'bái māo', en: 'white cat' } },
+            { hanzi: '红', pinyin: 'hóng', definition: 'red', level: 1, sentence: { zh: '红花', py: 'hóng huā', en: 'red flower' } },
+            { hanzi: '黑', pinyin: 'hēi', definition: 'black', level: 1, sentence: { zh: '黑狗', py: 'hēi gǒu', en: 'black dog' } },
+            { hanzi: '蓝', pinyin: 'lán', definition: 'blue', level: 1, sentence: { zh: '蓝天', py: 'lán tiān', en: 'blue sky' } },
+            { hanzi: '绿', pinyin: 'lǜ', definition: 'green', level: 1, sentence: { zh: '绿树', py: 'lǜ shù', en: 'green tree' } },
+            { hanzi: '黄', pinyin: 'huáng', definition: 'yellow', level: 1, sentence: { zh: '黄花', py: 'huáng huā', en: 'yellow flower' } },
+            { hanzi: '叫', pinyin: 'jiào', definition: 'to call; to be called', level: 1, sentence: { zh: '你叫什么名字？', py: 'Nǐ jiào shénme míngzì?', en: 'What is your name?' } },
+            { hanzi: '坐', pinyin: 'zuò', definition: 'to sit', level: 1, sentence: { zh: '请坐。', py: 'Qǐng zuò.', en: 'Please sit down.' } },
+            { hanzi: '站', pinyin: 'zhàn', definition: 'to stand', level: 1, sentence: { zh: '请站起来。', py: 'Qǐng zhàn qǐlai.', en: 'Please stand up.' } },
+            { hanzi: '走', pinyin: 'zǒu', definition: 'to walk', level: 1, sentence: { zh: '我走路去。', py: 'Wǒ zǒu lù qù.', en: 'I will walk there.' } },
+            { hanzi: '跑', pinyin: 'pǎo', definition: 'to run', level: 1, sentence: { zh: '他跑得快。', py: 'Tā pǎo de kuài.', en: 'He runs fast.' } },
+            { hanzi: '开', pinyin: 'kāi', definition: 'to open; to drive', level: 1, sentence: { zh: '开门', py: 'kāi mén', en: 'open the door' } },
+            { hanzi: '关', pinyin: 'guān', definition: 'to close; to shut', level: 1, sentence: { zh: '关门', py: 'guān mén', en: 'close the door' } },
+            { hanzi: '买', pinyin: 'mǎi', definition: 'to buy', level: 1, sentence: { zh: '我买书。', py: 'Wǒ mǎi shū.', en: 'I buy books.' } },
+            { hanzi: '卖', pinyin: 'mài', definition: 'to sell', level: 1, sentence: { zh: '商店卖水果。', py: 'Shāngdiàn mài shuǐguǒ.', en: 'The store sells fruit.' } },
+            { hanzi: '睡', pinyin: 'shuì', definition: 'to sleep', level: 1, sentence: { zh: '我睡觉了。', py: 'Wǒ shuìjiào le.', en: 'I went to sleep.' } },
+            { hanzi: '做', pinyin: 'zuò', definition: 'to do; to make', level: 1, sentence: { zh: '我做饭。', py: 'Wǒ zuò fàn.', en: 'I cook.' } },
+            { hanzi: '书', pinyin: 'shū', definition: 'book', level: 1, sentence: { zh: '一本书', py: 'yī běn shū', en: 'one book' } },
+            { hanzi: '桌子', pinyin: 'zhuōzi', definition: 'table; desk', level: 1, sentence: { zh: '桌子上有书。', py: 'Zhuōzi shàng yǒu shū.', en: 'There is a book on the table.' } },
+            { hanzi: '椅子', pinyin: 'yǐzi', definition: 'chair', level: 1, sentence: { zh: '一把椅子', py: 'yī bǎ yǐzi', en: 'one chair' } },
+            { hanzi: '钱', pinyin: 'qián', definition: 'money', level: 1, sentence: { zh: '我没有钱。', py: 'Wǒ méiyǒu qián.', en: 'I do not have money.' } },
+            { hanzi: '块', pinyin: 'kuài', definition: 'piece; yuan (money)', level: 1, sentence: { zh: '三块钱', py: 'sān kuài qián', en: 'three yuan' } },
+            { hanzi: '老师', pinyin: 'lǎoshī', definition: 'teacher', level: 1, sentence: { zh: '王老师好！', py: 'Wáng lǎoshī hǎo!', en: 'Hello Teacher Wang!' } },
+            { hanzi: '同学', pinyin: 'tóngxué', definition: 'classmate', level: 1, sentence: { zh: '我的同学', py: 'Wǒ de tóngxué', en: 'my classmate' } },
+            { hanzi: '医生', pinyin: 'yīshēng', definition: 'doctor', level: 1, sentence: { zh: '看医生', py: 'kàn yīshēng', en: 'see a doctor' } },
+            { hanzi: '衣服', pinyin: 'yīfu', definition: 'clothes', level: 1, sentence: { zh: '新衣服', py: 'xīn yīfu', en: 'new clothes' } },
+            { hanzi: '鞋', pinyin: 'xié', definition: 'shoes', level: 1, sentence: { zh: '一双鞋', py: 'yī shuāng xié', en: 'a pair of shoes' } },
+            { hanzi: '商店', pinyin: 'shāngdiàn', definition: 'shop; store', level: 1, sentence: { zh: '去商店', py: 'qù shāngdiàn', en: 'go to the store' } },
+            { hanzi: '杯子', pinyin: 'bēizi', definition: 'cup; glass', level: 1, sentence: { zh: '一个杯子', py: 'yī gè bēizi', en: 'one cup' } },
+            { hanzi: '碗', pinyin: 'wǎn', definition: 'bowl', level: 1, sentence: { zh: '一碗米饭', py: 'yī wǎn mǐfàn', en: 'a bowl of rice' } },
+            { hanzi: '快', pinyin: 'kuài', definition: 'fast; quick', level: 1, sentence: { zh: '快跑！', py: 'Kuài pǎo!', en: 'Run fast!' } },
+            { hanzi: '慢', pinyin: 'màn', definition: 'slow', level: 1, sentence: { zh: '慢走。', py: 'Màn zǒu.', en: 'Walk slowly.' } },
+            { hanzi: '高兴', pinyin: 'gāoxìng', definition: 'happy; glad', level: 1, sentence: { zh: '我很高兴。', py: 'Wǒ hěn gāoxìng.', en: 'I am very happy.' } },
+            { hanzi: '冷', pinyin: 'lěng', definition: 'cold', level: 1, sentence: { zh: '天气很冷。', py: 'Tiānqì hěn lěng.', en: 'The weather is cold.' } },
+            { hanzi: '热', pinyin: 'rè', definition: 'hot', level: 1, sentence: { zh: '夏天很热。', py: 'Xiàtiān hěn rè.', en: 'Summer is hot.' } },
+            { hanzi: '对', pinyin: 'duì', definition: 'correct; right', level: 1, sentence: { zh: '你说得对。', py: 'Nǐ shuō de duì.', en: 'You are right.' } },
+            { hanzi: '错', pinyin: 'cuò', definition: 'wrong; incorrect', level: 1, sentence: { zh: '这个不对。', py: 'Zhège bú duì.', en: 'This is wrong.' } },
+            { hanzi: '漂亮', pinyin: 'piàoliang', definition: 'beautiful; pretty', level: 1, sentence: { zh: '漂亮的花', py: 'piàoliang de huā', en: 'beautiful flower' } },
+            { hanzi: '新', pinyin: 'xīn', definition: 'new', level: 1, sentence: { zh: '新书', py: 'xīn shū', en: 'new book' } },
+            { hanzi: '旧', pinyin: 'jiù', definition: 'old; used', level: 1, sentence: { zh: '旧衣服', py: 'jiù yīfu', en: 'old clothes' } },
+            { hanzi: '去', pinyin: 'qù', definition: 'to go', level: 2, sentence: { zh: '我去商店。', py: 'Wǒ qù shāngdiàn.', en: 'I go to the store.' } },
+            { hanzi: '能', pinyin: 'néng', definition: 'can; able to', level: 2, sentence: { zh: '我能帮助你。', py: 'Wǒ néng bāngzhù nǐ.', en: 'I can help you.' } },
+            { hanzi: '会', pinyin: 'huì', definition: 'will; can; know how to', level: 2, sentence: { zh: '我会说英语。', py: 'Wǒ huì shuō Yīngyǔ.', en: 'I can speak English.' } },
+            { hanzi: '喜欢', pinyin: 'xǐhuān', definition: 'to like', level: 2, sentence: { zh: '我喜欢喝茶。', py: 'Wǒ xǐhuān hē chá.', en: 'I like to drink tea.' } },
+            { hanzi: '想', pinyin: 'xiǎng', definition: 'to want; to think', level: 2, sentence: { zh: '我想学习。', py: 'Wǒ xiǎng xuéxí.', en: 'I want to study.' } },
+            { hanzi: '爱', pinyin: 'ài', definition: 'to love', level: 2, sentence: { zh: '我爱你。', py: 'Wǒ ài nǐ.', en: 'I love you.' } },
+            { hanzi: '吃', pinyin: 'chī', definition: 'to eat', level: 2, sentence: { zh: '我们一起吃饭。', py: 'Wǒmen yīqǐ chī fàn.', en: 'We eat together.' } },
+            { hanzi: '喝', pinyin: 'hē', definition: 'to drink', level: 2, sentence: { zh: '他喝水。', py: 'Tā hē shuǐ.', en: 'He drinks water.' } },
+            { hanzi: '看', pinyin: 'kàn', definition: 'to look; to watch', level: 2, sentence: { zh: '我看电影。', py: 'Wǒ kàn diànyǐng.', en: 'I watch movies.' } },
+            { hanzi: '听', pinyin: 'tīng', definition: 'to listen', level: 2, sentence: { zh: '听音乐', py: 'tīng yīnyuè', en: 'listen to music' } },
+            { hanzi: '读', pinyin: 'dú', definition: 'to read', level: 2, sentence: { zh: '我读书。', py: 'Wǒ dú shū.', en: 'I read books.' } },
+            { hanzi: '写', pinyin: 'xiě', definition: 'to write', level: 2, sentence: { zh: '她写字。', py: 'Tā xiě zì.', en: 'She writes characters.' } },
+            { hanzi: '学习', pinyin: 'xuéxí', definition: 'to study; to learn', level: 2, sentence: { zh: '每天学习中文。', py: 'Měitiān xuéxí Zhōngwén.', en: 'Study Chinese every day.' } },
+            { hanzi: '工作', pinyin: 'gōngzuò', definition: 'work; job', level: 2, sentence: { zh: '他的工作很忙。', py: 'Tā de gōngzuò hěn máng.', en: 'His job is very busy.' } },
+            { hanzi: '朋友', pinyin: 'péngyou', definition: 'friend', level: 2, sentence: { zh: '她是我的好朋友。', py: 'Tā shì wǒ de hǎo péngyou.', en: 'She is my good friend.' } },
+            { hanzi: '家', pinyin: 'jiā', definition: 'home; family', level: 2, sentence: { zh: '我回家。', py: 'Wǒ huí jiā.', en: 'I return home.' } },
+            { hanzi: '住', pinyin: 'zhù', definition: 'to live; to reside', level: 2, sentence: { zh: '我住在北京。', py: 'Wǒ zhù zài Běijīng.', en: 'I live in Beijing.' } },
+            { hanzi: '哪里', pinyin: 'nǎlǐ', definition: 'where', level: 2, sentence: { zh: '你住在哪里？', py: 'Nǐ zhù zài nǎlǐ?', en: 'Where do you live?' } },
+            { hanzi: '谁', pinyin: 'shuí', definition: 'who', level: 2, sentence: { zh: '这是谁？', py: 'Zhè shì shuí?', en: 'Who is this?' } },
+            { hanzi: '什么', pinyin: 'shénme', definition: 'what', level: 2, sentence: { zh: '你在做什么？', py: 'Nǐ zài zuò shénme?', en: 'What are you doing?' } },
+            { hanzi: '岁', pinyin: 'suì', definition: 'year (of age)', level: 2, sentence: { zh: '你几岁？', py: 'Nǐ jǐ suì?', en: 'How old are you?' } },
+            { hanzi: '生日', pinyin: 'shēngrì', definition: 'birthday', level: 2, sentence: { zh: '生日快乐！', py: 'Shēngrì kuàilè!', en: 'Happy birthday!' } },
+            { hanzi: '快乐', pinyin: 'kuàilè', definition: 'happy; joyful', level: 2, sentence: { zh: '新年快乐！', py: 'Xīnnián kuàilè!', en: 'Happy new year!' } },
+            { hanzi: '好看', pinyin: 'hǎokàn', definition: 'good-looking; pretty', level: 2, sentence: { zh: '这件衣服很好看。', py: 'Zhè jiàn yīfu hěn hǎokàn.', en: 'This piece of clothing is very nice.' } },
+            { hanzi: '好吃', pinyin: 'hǎochī', definition: 'delicious; tasty', level: 2, sentence: { zh: '这个菜很好吃。', py: 'Zhège cài hěn hǎochī.', en: 'This dish is delicious.' } },
+            { hanzi: '好玩', pinyin: 'hǎowán', definition: 'fun; amusing', level: 2, sentence: { zh: '这个地方很好玩。', py: 'Zhège dìfang hěn hǎowán.', en: 'This place is very fun.' } },
+            { hanzi: '玩', pinyin: 'wán', definition: 'to play; to have fun', level: 2, sentence: { zh: '我们一起去玩吧。', py: 'Wǒmen yìqǐ qù wán ba.', en: 'Let us go play together.' } },
+            { hanzi: '跑步', pinyin: 'pǎobù', definition: 'to run; jogging', level: 2, sentence: { zh: '我每天早上跑步。', py: 'Wǒ měitiān zǎoshang pǎobù.', en: 'I jog every morning.' } },
+            { hanzi: '运动', pinyin: 'yùndòng', definition: 'exercise; sports', level: 2, sentence: { zh: '你喜欢什么运动？', py: 'Nǐ xǐhuān shénme yùndòng?', en: 'What sports do you like?' } },
+            { hanzi: '唱歌', pinyin: 'chànggē', definition: 'to sing', level: 2, sentence: { zh: '她喜欢唱歌。', py: 'Tā xǐhuān chànggē.', en: 'She likes to sing.' } },
+            { hanzi: '跳舞', pinyin: 'tiàowǔ', definition: 'to dance', level: 2, sentence: { zh: '我们一起跳舞吧。', py: 'Wǒmen yìqǐ tiàowǔ ba.', en: 'Let us dance together.' } },
+            { hanzi: '画画', pinyin: 'huàhuà', definition: 'to paint; to draw', level: 2, sentence: { zh: '她喜欢画画。', py: 'Tā xǐhuān huàhuà.', en: 'She likes to paint.' } },
+            { hanzi: '说话', pinyin: 'shuōhuà', definition: 'to speak; to talk', level: 2, sentence: { zh: '请说话小声点。', py: 'Qǐng shuōhuà xiǎo shēng diǎn.', en: 'Please speak more quietly.' } },
+            { hanzi: '电话', pinyin: 'diànhuà', definition: 'telephone; phone call', level: 2, sentence: { zh: '打个电话', py: 'dǎ gè diànhuà', en: 'make a phone call' } },
+            { hanzi: '睡觉', pinyin: 'shuìjiào', definition: 'to sleep', level: 2, sentence: { zh: '早点睡觉。', py: 'Zǎo diǎn shuìjiào.', en: 'Go to bed early.' } },
+            { hanzi: '起床', pinyin: 'qǐchuáng', definition: 'to get up', level: 2, sentence: { zh: '我六点起床。', py: 'Wǒ liù diǎn qǐchuáng.', en: 'I get up at six.' } },
+            { hanzi: '洗澡', pinyin: 'xǐzǎo', definition: 'to take a shower', level: 2, sentence: { zh: '我去洗澡。', py: 'Wǒ qù xǐzǎo.', en: 'I am going to take a shower.' } },
+            { hanzi: '穿', pinyin: 'chuān', definition: 'to wear; to put on', level: 2, sentence: { zh: '穿上衣服', py: 'chuān shàng yīfu', en: 'put on clothes' } },
+            { hanzi: '脱', pinyin: 'tuō', definition: 'to take off (clothes)', level: 2, sentence: { zh: '脱掉外套', py: 'tuō diào wàitào', en: 'take off the coat' } },
+            { hanzi: '戴', pinyin: 'dài', definition: 'to wear (accessories)', level: 2, sentence: { zh: '戴帽子', py: 'dài màozi', en: 'wear a hat' } },
+            { hanzi: '拿', pinyin: 'ná', definition: 'to take; to hold', level: 2, sentence: { zh: '拿书', py: 'ná shū', en: 'take a book' } },
+            { hanzi: '放', pinyin: 'fàng', definition: 'to put; to place', level: 2, sentence: { zh: '放在桌子上', py: 'fàng zài zhuōzi shàng', en: 'put on the table' } },
+            { hanzi: '洗', pinyin: 'xǐ', definition: 'to wash', level: 2, sentence: { zh: '洗手', py: 'xǐ shǒu', en: 'wash hands' } },
+            { hanzi: '谢谢', pinyin: 'xièxie', definition: 'thank you; to thank', level: 2, sentence: { zh: '谢谢你。', py: 'Xièxie nǐ.', en: 'Thank you.' } },
+            { hanzi: '客气', pinyin: 'kèqì', definition: 'polite; courteous', level: 2, sentence: { zh: '别客气。', py: 'Bié kèqì.', en: 'You are welcome.' } },
+            { hanzi: '对不起', pinyin: 'duìbuqǐ', definition: 'sorry; excuse me', level: 2, sentence: { zh: '对不起！', py: 'Duìbuqǐ!', en: 'I am sorry!' } },
+            { hanzi: '没关系', pinyin: 'méiguānxì', definition: 'it does not matter', level: 2, sentence: { zh: '没关系。', py: 'Méiguānxì.', en: 'It is okay.' } },
+            { hanzi: '再见', pinyin: 'zàijiàn', definition: 'goodbye', level: 2, sentence: { zh: '明天见！', py: 'Míngtiān jiàn!', en: 'See you tomorrow!' } },
+            { hanzi: '请', pinyin: 'qǐng', definition: 'please; to invite', level: 2, sentence: { zh: '请坐。', py: 'Qǐng zuò.', en: 'Please sit down.' } },
+            { hanzi: '进', pinyin: 'jìn', definition: 'to enter', level: 2, sentence: { zh: '请进。', py: 'Qǐng jìn.', en: 'Please come in.' } },
+            { hanzi: '出', pinyin: 'chū', definition: 'to go out', level: 2, sentence: { zh: '出门', py: 'chū mén', en: 'go out the door' } },
+            { hanzi: '回', pinyin: 'huí', definition: 'to return; to go back', level: 2, sentence: { zh: '回家', py: 'huí jiā', en: 'go home' } },
+            { hanzi: '安全', pinyin: 'ānquán', definition: 'safe; safety', level: 2, sentence: { zh: '注意安全', py: 'zhùyì ānquán', en: 'pay attention to safety' } },
+            { hanzi: '危险', pinyin: 'wēixiǎn', definition: 'dangerous; danger', level: 2, sentence: { zh: '这里很危险。', py: 'Zhèlǐ hěn wēixiǎn.', en: 'It is dangerous here.' } },
+            { hanzi: '简单', pinyin: 'jiǎndān', definition: 'simple', level: 2, sentence: { zh: '这个很简单。', py: 'Zhège hěn jiǎndān.', en: 'This is very simple.' } },
+            { hanzi: '难', pinyin: 'nán', definition: 'difficult; hard', level: 2, sentence: { zh: '考试很难。', py: 'Kǎoshì hěn nán.', en: 'The exam is very difficult.' } },
+            { hanzi: '贵', pinyin: 'guì', definition: 'expensive', level: 2, sentence: { zh: '这个太贵了。', py: 'Zhège tài guì le.', en: 'This is too expensive.' } },
+            { hanzi: '便宜', pinyin: 'piányi', definition: 'cheap; inexpensive', level: 2, sentence: { zh: '很便宜', py: 'hěn piányi', en: 'very cheap' } },
+            { hanzi: '远', pinyin: 'yuǎn', definition: 'far; distant', level: 2, sentence: { zh: '学校很远。', py: 'Xuéxiào hěn yuǎn.', en: 'The school is very far.' } },
+            { hanzi: '近', pinyin: 'jìn', definition: 'near; close', level: 2, sentence: { zh: '很近', py: 'hěn jìn', en: 'very close' } },
+            { hanzi: '高', pinyin: 'gāo', definition: 'tall; high', level: 2, sentence: { zh: '他很高。', py: 'Tā hěn gāo.', en: 'He is very tall.' } },
+            { hanzi: '矮', pinyin: 'ǎi', definition: 'short (in height)', level: 2, sentence: { zh: '我不矮。', py: 'Wǒ bù ǎi.', en: 'I am not short.' } },
+            { hanzi: '胖', pinyin: 'pàng', definition: 'fat; plump', level: 2, sentence: { zh: '他有点胖。', py: 'Tā yǒu diǎn pàng.', en: 'He is a bit fat.' } },
+            { hanzi: '瘦', pinyin: 'shòu', definition: 'thin; slim', level: 2, sentence: { zh: '她很瘦。', py: 'Tā hěn shòu.', en: 'She is very thin.' } },
+            { hanzi: '年轻', pinyin: 'niánqīng', definition: 'young', level: 2, sentence: { zh: '你很年轻。', py: 'Nǐ hěn niánqīng.', en: 'You are very young.' } },
+            { hanzi: '男', pinyin: 'nán', definition: 'male; man', level: 2, sentence: { zh: '男生', py: 'nánshēng', en: 'boy; male student' } },
+            { hanzi: '女孩', pinyin: 'nǚhái', definition: 'girl', level: 2, sentence: { zh: '小女孩', py: 'xiǎo nǚhái', en: 'little girl' } },
+            { hanzi: '孩子', pinyin: 'háizi', definition: 'child', level: 2, sentence: { zh: '孩子们', py: 'háizimen', en: 'children' } },
+            { hanzi: '东西', pinyin: 'dōngxī', definition: 'thing; stuff', level: 2, sentence: { zh: '这是什么东西？', py: 'Zhè shì shénme dōngxī?', en: 'What is this thing?' } },
+            { hanzi: '名字', pinyin: 'míngzì', definition: 'name', level: 2, sentence: { zh: '你叫什么名字？', py: 'Nǐ jiào shénme míngzì?', en: 'What is your name?' } },
+            { hanzi: '房间', pinyin: 'fángjiān', definition: 'room', level: 2, sentence: { zh: '这个房间很大。', py: 'Zhège fángjiān hěn dà.', en: 'This room is very big.' } },
+            { hanzi: '学校', pinyin: 'xuéxiào', definition: 'school', level: 2, sentence: { zh: '我去学校。', py: 'Wǒ qù xuéxiào.', en: 'I go to school.' } },
+            { hanzi: '医院', pinyin: 'yīyuàn', definition: 'hospital', level: 2, sentence: { zh: '去医院', py: 'qù yīyuàn', en: 'go to the hospital' } },
+            { hanzi: '银行', pinyin: 'yínháng', definition: 'bank', level: 2, sentence: { zh: '去银行取钱。', py: 'Qù yínháng qǔ qián.', en: 'Go to the bank to withdraw money.' } },
+            { hanzi: '邮局', pinyin: 'yóujú', definition: 'post office', level: 2, sentence: { zh: '去邮局寄信。', py: 'Qù yóujú jì xìn.', en: 'Go to the post office to send a letter.' } },
+            { hanzi: '公园', pinyin: 'gōngyuán', definition: 'park', level: 2, sentence: { zh: '去公园散步。', py: 'Qù gōngyuán sànbù.', en: 'Go to the park for a walk.' } },
+            { hanzi: '图书馆', pinyin: 'túshūguǎn', definition: 'library', level: 2, sentence: { zh: '在图书馆看书。', py: 'Zài túshūguǎn kàn shū.', en: 'Read books in the library.' } },
+            { hanzi: '机场', pinyin: 'jīchǎng', definition: 'airport', level: 2, sentence: { zh: '去机场接人。', py: 'Qù jīchǎng jiē rén.', en: 'Go to the airport to pick someone up.' } },
+            { hanzi: '火车', pinyin: 'huǒchē', definition: 'train', level: 2, sentence: { zh: '坐火车旅行。', py: 'Zuò huǒchē lǚxíng.', en: 'Travel by train.' } },
+            { hanzi: '地铁', pinyin: 'dìtiě', definition: 'subway; metro', level: 2, sentence: { zh: '坐地铁上班。', py: 'Zuò dìtiě shàngbān.', en: 'Take the subway to work.' } },
+            { hanzi: '出租车', pinyin: 'chūzūchē', definition: 'taxi', level: 2, sentence: { zh: '打出租车', py: 'dǎ chūzūchē', en: 'take a taxi' } },
+            { hanzi: '自行车', pinyin: 'zìxíngchē', definition: 'bicycle', level: 2, sentence: { zh: '骑自行车', py: 'qí zìxíngchē', en: 'ride a bicycle' } },
+            { hanzi: '小时', pinyin: 'xiǎoshí', definition: 'hour', level: 2, sentence: { zh: '一个小时', py: 'yī gè xiǎoshí', en: 'one hour' } },
+            { hanzi: '分钟', pinyin: 'fēnzhōng', definition: 'minute', level: 2, sentence: { zh: '五分钟', py: 'wǔ fēnzhōng', en: 'five minutes' } },
+            { hanzi: '号码', pinyin: 'hàomǎ', definition: 'number', level: 2, sentence: { zh: '电话号码', py: 'diànhuà hàomǎ', en: 'phone number' } },
+            { hanzi: '旁边', pinyin: 'pángbiān', definition: 'side; beside', level: 2, sentence: { zh: '在我旁边', py: 'zài wǒ pángbiān', en: 'beside me' } },
+            { hanzi: '对面', pinyin: 'duìmiàn', definition: 'opposite side', level: 2, sentence: { zh: '在学校对面', py: 'zài xuéxiào duìmiàn', en: 'opposite the school' } },
+            { hanzi: '后面', pinyin: 'hòumiàn', definition: 'behind; back', level: 2, sentence: { zh: '在房子后面', py: 'zài fángzi hòumiàn', en: 'behind the house' } },
+            { hanzi: '上面', pinyin: 'shàngmiàn', definition: 'above; on top', level: 2, sentence: { zh: '在桌子上面', py: 'zài zhuōzi shàngmiàn', en: 'on the table' } },
+            { hanzi: '下面', pinyin: 'xiàmiàn', definition: 'below; underneath', level: 2, sentence: { zh: '在床下面', py: 'zài chuáng xiàmiàn', en: 'under the bed' } },
+            { hanzi: '里面', pinyin: 'lǐmiàn', definition: 'inside', level: 2, sentence: { zh: '在房间里面', py: 'zài fángjiān lǐmiàn', en: 'inside the room' } },
+            { hanzi: '外面', pinyin: 'wàimiàn', definition: 'outside', level: 2, sentence: { zh: '在外面等', py: 'zài wàimiàn děng', en: 'wait outside' } },
+            { hanzi: '左边', pinyin: 'zuǒbiān', definition: 'left side', level: 2, sentence: { zh: '在左边', py: 'zài zuǒbiān', en: 'on the left' } },
+            { hanzi: '右边', pinyin: 'yòubiān', definition: 'right side', level: 2, sentence: { zh: '在右边', py: 'zài yòubiān', en: 'on the right' } },
+            { hanzi: '公斤', pinyin: 'gōngjīn', definition: 'kilogram', level: 2, sentence: { zh: '两公斤苹果', py: 'liǎng gōngjīn píngguǒ', en: 'two kilograms of apples' } },
+            { hanzi: '公里', pinyin: 'gōnglǐ', definition: 'kilometer', level: 2, sentence: { zh: '五公里路', py: 'wǔ gōnglǐ lù', en: 'five kilometers' } },
+            { hanzi: '为什么', pinyin: 'wèishénme', definition: 'why', level: 3, sentence: { zh: '你为什么学习中文？', py: 'Nǐ wèishénme xuéxí Zhōngwén?', en: 'Why do you study Chinese?' } },
+            { hanzi: '怎么', pinyin: 'zěnme', definition: 'how', level: 3, sentence: { zh: '你怎么去学校？', py: 'Nǐ zěnme qù xuéxiào?', en: 'How do you go to school?' } },
+            { hanzi: '多少', pinyin: 'duōshao', definition: 'how many; how much', level: 3, sentence: { zh: '这本书多少钱？', py: 'Zhè běn shū duōshao qián?', en: 'How much is this book?' } },
+            { hanzi: '几', pinyin: 'jǐ', definition: 'how many (small number)', level: 3, sentence: { zh: '你几岁？', py: 'Nǐ jǐ suì?', en: 'How old are you?' } },
+            { hanzi: '时候', pinyin: 'shíhou', definition: 'time; when', level: 3, sentence: { zh: '什么时候见面？', py: 'Shénme shíhou jiànmiàn?', en: 'When shall we meet?' } },
+            { hanzi: '现在', pinyin: 'xiànzài', definition: 'now; at present', level: 3, sentence: { zh: '我现在很忙。', py: 'Wǒ xiànzài hěn máng.', en: 'I am very busy now.' } },
+            { hanzi: '以前', pinyin: 'yǐqián', definition: 'before; in the past', level: 3, sentence: { zh: '我以前学过。', py: 'Wǒ yǐqián xué guo.', en: 'I studied it before.' } },
+            { hanzi: '以后', pinyin: 'yǐhòu', definition: 'after; in the future', level: 3, sentence: { zh: '以后再说。', py: 'Yǐhòu zài shuō.', en: 'Talk about it later.' } },
+            { hanzi: '今天', pinyin: 'jīntiān', definition: 'today', level: 3, sentence: { zh: '今天天气很好。', py: 'Jīntiān tiānqì hěn hǎo.', en: 'The weather is very good today.' } },
+            { hanzi: '明天', pinyin: 'míngtiān', definition: 'tomorrow', level: 3, sentence: { zh: '明天见！', py: 'Míngtiān jiàn!', en: 'See you tomorrow!' } },
+            { hanzi: '昨天', pinyin: 'zuótiān', definition: 'yesterday', level: 3, sentence: { zh: '昨天我很忙。', py: 'Zuótiān wǒ hěn máng.', en: 'I was very busy yesterday.' } },
+            { hanzi: '开始', pinyin: 'kāishǐ', definition: 'to begin; start', level: 3, sentence: { zh: '我们开始吧。', py: 'Wǒmen kāishǐ ba.', en: 'Let us begin.' } },
+            { hanzi: '结束', pinyin: 'jiéshù', definition: 'to end; finish', level: 3, sentence: { zh: '会议结束了。', py: 'Huìyì jiéshù le.', en: 'The meeting has ended.' } },
+            { hanzi: '继续', pinyin: 'jìxù', definition: 'to continue', level: 3, sentence: { zh: '请继续说。', py: 'Qǐng jìxù shuō.', en: 'Please continue speaking.' } },
+            { hanzi: '已经', pinyin: 'yǐjīng', definition: 'already', level: 3, sentence: { zh: '我已经知道了。', py: 'Wǒ yǐjīng zhīdào le.', en: 'I already know.' } },
+            { hanzi: '还', pinyin: 'hái', definition: 'still; yet; also', level: 3, sentence: { zh: '我还不知道。', py: 'Wǒ hái bù zhīdào.', en: 'I still do not know.' } },
+            { hanzi: '更', pinyin: 'gèng', definition: 'more; even more', level: 3, sentence: { zh: '更好', py: 'gèng hǎo', en: 'even better' } },
+            { hanzi: '最', pinyin: 'zuì', definition: 'most; very', level: 3, sentence: { zh: '最好', py: 'zuì hǎo', en: 'the best' } },
+            { hanzi: '太', pinyin: 'tài', definition: 'too; very', level: 3, sentence: { zh: '太好了！', py: 'Tài hǎo le!', en: 'That is great!' } },
+            { hanzi: '非常', pinyin: 'fēicháng', definition: 'very; extremely', level: 3, sentence: { zh: '非常好', py: 'fēicháng hǎo', en: 'very good' } },
+            { hanzi: '大家', pinyin: 'dàjiā', definition: 'everyone', level: 3, sentence: { zh: '大家好！', py: 'Dàjiā hǎo!', en: 'Hello everyone!' } },
+            { hanzi: '自己', pinyin: 'zìjǐ', definition: 'self; oneself', level: 3, sentence: { zh: '我自己做。', py: 'Wǒ zìjǐ zuò.', en: 'I do it myself.' } },
+            { hanzi: '别人', pinyin: 'biérén', definition: 'other people; others', level: 3, sentence: { zh: '帮助别人', py: 'bāngzhù biérén', en: 'help others' } },
+            { hanzi: '每', pinyin: 'měi', definition: 'every; each', level: 3, sentence: { zh: '每天学习', py: 'měitiān xuéxí', en: 'study every day' } },
+            { hanzi: '经常', pinyin: 'jīngcháng', definition: 'often; frequently', level: 3, sentence: { zh: '我经常运动。', py: 'Wǒ jīngcháng yùndòng.', en: 'I often exercise.' } },
+            { hanzi: '总是', pinyin: 'zǒngshì', definition: 'always', level: 3, sentence: { zh: '他总是迟到。', py: 'Tā zǒngshì chídào.', en: 'He is always late.' } },
+            { hanzi: '一直', pinyin: 'yìzhí', definition: 'always; straight; continuously', level: 3, sentence: { zh: '我一直等你。', py: 'Wǒ yìzhí děng nǐ.', en: 'I have been waiting for you.' } },
+            { hanzi: '一会儿', pinyin: 'yíhuìr', definition: 'a while; a moment', level: 3, sentence: { zh: '等我一会儿。', py: 'Děng wǒ yíhuìr.', en: 'Wait for me a moment.' } },
+            { hanzi: '一些', pinyin: 'yìxiē', definition: 'some; a few', level: 3, sentence: { zh: '一些问题', py: 'yìxiē wèntí', en: 'some questions' } },
+            { hanzi: '一起', pinyin: 'yìqǐ', definition: 'together', level: 3, sentence: { zh: '我们一起学习。', py: 'Wǒmen yìqǐ xuéxí.', en: 'We study together.' } },
+            { hanzi: '一样', pinyin: 'yíyàng', definition: 'same; alike', level: 3, sentence: { zh: '我们一样大。', py: 'Wǒmen yíyàng dà.', en: 'We are the same age.' } },
+            { hanzi: '有的', pinyin: 'yǒude', definition: 'some', level: 3, sentence: { zh: '有的人喜欢猫。', py: 'Yǒude rén xǐhuān māo.', en: 'Some people like cats.' } },
+            { hanzi: '然后', pinyin: 'ránhòu', definition: 'then; after that', level: 3, sentence: { zh: '先吃饭，然后学习。', py: 'Xiān chīfàn, ránhòu xuéxí.', en: 'Eat first, then study.' } },
+            { hanzi: '最后', pinyin: 'zuìhòu', definition: 'finally; at last', level: 3, sentence: { zh: '最后，我成功了。', py: 'Zuìhòu, wǒ chénggōng le.', en: 'Finally, I succeeded.' } },
+            { hanzi: '终于', pinyin: 'zhōngyú', definition: 'finally; at last', level: 3, sentence: { zh: '我终于明白了。', py: 'Wǒ zhōngyú míngbai le.', en: 'I finally understand.' } },
+            { hanzi: '突然', pinyin: 'tūrán', definition: 'suddenly', level: 3, sentence: { zh: '突然下雨了。', py: 'Tūrán xià yǔ le.', en: 'It suddenly rained.' } },
+            { hanzi: '当然', pinyin: 'dāngrán', definition: 'of course; certainly', level: 3, sentence: { zh: '当然可以。', py: 'Dāngrán kěyǐ.', en: 'Of course.' } },
+            { hanzi: '原来', pinyin: 'yuánlái', definition: 'originally; as it turns out', level: 3, sentence: { zh: '原来是你！', py: 'Yuánlái shì nǐ!', en: 'So it is you!' } },
+            { hanzi: '其实', pinyin: 'qíshí', definition: 'actually; in fact', level: 3, sentence: { zh: '其实很简单。', py: 'Qíshí hěn jiǎndān.', en: 'Actually, it is very simple.' } },
+            { hanzi: '好像', pinyin: 'hǎoxiàng', definition: 'seems; as if', level: 3, sentence: { zh: '好像要下雨。', py: 'Hǎoxiàng yào xià yǔ.', en: 'It looks like rain.' } },
+            { hanzi: '也许', pinyin: 'yěxǔ', definition: 'perhaps; maybe', level: 3, sentence: { zh: '他也许不来了。', py: 'Tā yěxǔ bù lái le.', en: 'He might not come.' } },
+            { hanzi: '差不多', pinyin: 'chàbuduō', definition: 'almost; more or less', level: 3, sentence: { zh: '差不多好了。', py: 'Chàbuduō hǎo le.', en: 'Almost done.' } },
+            { hanzi: '一般', pinyin: 'yìbān', definition: 'general; ordinary; generally', level: 3, sentence: { zh: '一般情况', py: 'yìbān qíngkuàng', en: 'normal situation' } },
+            { hanzi: '容易', pinyin: 'róngyì', definition: 'easy', level: 3, sentence: { zh: '这个问题很容易。', py: 'Zhège wèntí hěn róngyì.', en: 'This question is very easy.' } },
+            { hanzi: '安静', pinyin: 'ānjìng', definition: 'quiet; peaceful', level: 3, sentence: { zh: '请安静！', py: 'Qǐng ānjìng!', en: 'Please be quiet!' } },
+            { hanzi: '干净', pinyin: 'gānjìng', definition: 'clean', level: 3, sentence: { zh: '房间很干净。', py: 'Fángjiān hěn gānjìng.', en: 'The room is very clean.' } },
+            { hanzi: '清楚', pinyin: 'qīngchu', definition: 'clear; clearly', level: 3, sentence: { zh: '说清楚', py: 'shuō qīngchu', en: 'speak clearly' } },
+            { hanzi: '新鲜', pinyin: 'xīnxiān', definition: 'fresh', level: 3, sentence: { zh: '新鲜水果', py: 'xīnxiān shuǐguǒ', en: 'fresh fruit' } },
+            { hanzi: '重要', pinyin: 'zhòngyào', definition: 'important', level: 3, sentence: { zh: '重要的事情', py: 'zhòngyào de shìqing', en: 'important matter' } },
+            { hanzi: '麻烦', pinyin: 'máfan', definition: 'troublesome; to trouble', level: 3, sentence: { zh: '麻烦你了。', py: 'Máfan nǐ le.', en: 'Sorry to trouble you.' } },
+            { hanzi: '奇怪', pinyin: 'qíguài', definition: 'strange; odd', level: 3, sentence: { zh: '很奇怪', py: 'hěn qíguài', en: 'very strange' } },
+            { hanzi: '照顾', pinyin: 'zhàogù', definition: 'to look after; to care for', level: 3, sentence: { zh: '照顾病人', py: 'zhàogù bìngrén', en: 'take care of a patient' } },
+            { hanzi: '收拾', pinyin: 'shōushi', definition: 'to tidy up; to pack', level: 3, sentence: { zh: '收拾房间', py: 'shōushi fángjiān', en: 'tidy up the room' } },
+            { hanzi: '检查', pinyin: 'jiǎnchá', definition: 'to check; to inspect', level: 3, sentence: { zh: '检查作业', py: 'jiǎnchá zuòyè', en: 'check homework' } },
+            { hanzi: '欢迎', pinyin: 'huānyíng', definition: 'to welcome', level: 3, sentence: { zh: '欢迎来我家！', py: 'Huānyíng lái wǒ jiā!', en: 'Welcome to my home!' } },
+            { hanzi: '打算', pinyin: 'dǎsuàn', definition: 'to plan; to intend', level: 3, sentence: { zh: '你打算做什么？', py: 'Nǐ dǎsuàn zuò shénme?', en: 'What do you plan to do?' } },
+            { hanzi: '决定', pinyin: 'juédìng', definition: 'to decide; decision', level: 3, sentence: { zh: '我决定了。', py: 'Wǒ juédìng le.', en: 'I have decided.' } },
+            { hanzi: '选择', pinyin: 'xuǎnzé', definition: 'to choose; choice', level: 3, sentence: { zh: '做出选择', py: 'zuòchū xuǎnzé', en: 'make a choice' } },
+            { hanzi: '变化', pinyin: 'biànhuà', definition: 'change; to change', level: 3, sentence: { zh: '天气变化很大。', py: 'Tiānqì biànhuà hěn dà.', en: 'The weather changes a lot.' } },
+            { hanzi: '增加', pinyin: 'zēngjiā', definition: 'to increase; to add', level: 3, sentence: { zh: '增加数量', py: 'zēngjiā shùliàng', en: 'increase the quantity' } },
+            { hanzi: '提高', pinyin: 'tígāo', definition: 'to raise; to improve', level: 3, sentence: { zh: '提高水平', py: 'tígāo shuǐpíng', en: 'improve the level' } },
+            { hanzi: '表示', pinyin: 'biǎoshì', definition: 'to express; to indicate', level: 3, sentence: { zh: '表示感谢', py: 'biǎoshì gǎnxiè', en: 'express gratitude' } },
+            { hanzi: '同意', pinyin: 'tóngyì', definition: 'to agree; to consent', level: 3, sentence: { zh: '我同意你的意见。', py: 'Wǒ tóngyì nǐ de yìjiàn.', en: 'I agree with you.' } },
+            { hanzi: '反对', pinyin: 'fǎnduì', definition: 'to oppose; to be against', level: 3, sentence: { zh: '反对浪费', py: 'fǎnduì làngfèi', en: 'oppose waste' } },
+            { hanzi: '发生', pinyin: 'fāshēng', definition: 'to happen; to occur', level: 3, sentence: { zh: '发生了什么事？', py: 'Fāshēng le shénme shì?', en: 'What happened?' } },
+            { hanzi: '负责', pinyin: 'fùzé', definition: 'to be responsible for', level: 3, sentence: { zh: '谁负责这个项目？', py: 'Shuí fùzé zhège xiàngmù?', en: 'Who is responsible for this project?' } },
+            { hanzi: '相信', pinyin: 'xiāngxìn', definition: 'to believe; to trust', level: 3, sentence: { zh: '我相信你。', py: 'Wǒ xiāngxìn nǐ.', en: 'I believe you.' } },
+            { hanzi: '担心', pinyin: 'dānxīn', definition: 'to worry', level: 3, sentence: { zh: '别担心。', py: 'Bié dānxīn.', en: 'Do not worry.' } },
+            { hanzi: '放心', pinyin: 'fàngxīn', definition: 'to rest assured; to set one mind at rest', level: 3, sentence: { zh: '你放心，我会做好。', py: 'Nǐ fàngxīn, wǒ huì zuò hǎo.', en: 'Rest assured, I will do it well.' } },
+            { hanzi: '难过', pinyin: 'nánguò', definition: 'sad; upset', level: 3, sentence: { zh: '他很难过。', py: 'Tā hěn nánguò.', en: 'He is very sad.' } },
+            { hanzi: '满意', pinyin: 'mǎnyì', definition: 'satisfied; pleased', level: 3, sentence: { zh: '我很满意。', py: 'Wǒ hěn mǎnyì.', en: 'I am very satisfied.' } },
+            { hanzi: '羡慕', pinyin: 'xiànmù', definition: 'to envy; to admire', level: 3, sentence: { zh: '我很羡慕你。', py: 'Wǒ hěn xiànmù nǐ.', en: 'I envy you very much.' } },
+            { hanzi: '一边', pinyin: 'yìbiān', definition: 'while; simultaneously', level: 3, sentence: { zh: '一边听音乐一边学习。', py: 'Yìbiān tīng yīnyuè yìbiān xuéxí.', en: 'Study while listening to music.' } },
+            { hanzi: '又', pinyin: 'yòu', definition: 'again; and; moreover', level: 3, sentence: { zh: '他又迟到了。', py: 'Tā yòu chídào le.', en: 'He is late again.' } },
+            { hanzi: '再', pinyin: 'zài', definition: 'again; once more', level: 3, sentence: { zh: '再说一遍。', py: 'Zài shuō yí biàn.', en: 'Say it again.' } },
+            { hanzi: '才', pinyin: 'cái', definition: 'just; only then', level: 3, sentence: { zh: '他八点才来。', py: 'Tā bā diǎn cái lái.', en: 'He did not come until eight.' } },
+            { hanzi: '就', pinyin: 'jiù', definition: 'just; then; exactly', level: 3, sentence: { zh: '我就来。', py: 'Wǒ jiù lái.', en: 'I will come right away.' } },
+            { hanzi: '地', pinyin: 'de', definition: 'adverbial particle', level: 3, sentence: { zh: '慢慢地走', py: 'mànmàn de zǒu', en: 'walk slowly' } },
+            { hanzi: '得', pinyin: 'de', definition: 'particle (result/complement)', level: 3, sentence: { zh: '说得好', py: 'shuō de hǎo', en: 'well said' } },
+            { hanzi: '把', pinyin: 'bǎ', definition: 'preposition (handling)', level: 3, sentence: { zh: '把门关上。', py: 'Bǎ mén guān shàng.', en: 'Close the door.' } },
+            { hanzi: '被', pinyin: 'bèi', definition: 'by (passive marker)', level: 3, sentence: { zh: '被表扬了。', py: 'Bèi biǎoyáng le.', en: 'Was praised.' } },
+            { hanzi: '让', pinyin: 'ràng', definition: 'to let; to make; to allow', level: 3, sentence: { zh: '让我看看。', py: 'Ràng wǒ kànkan.', en: 'Let me have a look.' } },
+            { hanzi: '向', pinyin: 'xiàng', definition: 'toward; to', level: 3, sentence: { zh: '向前走', py: 'xiàng qián zǒu', en: 'walk forward' } },
+            { hanzi: '从', pinyin: 'cóng', definition: 'from; since', level: 3, sentence: { zh: '从北京到上海', py: 'Cóng Běijīng dào Shànghǎi', en: 'from Beijing to Shanghai' } },
+            { hanzi: '比', pinyin: 'bǐ', definition: 'than; compare', level: 3, sentence: { zh: '他比我大。', py: 'Tā bǐ wǒ dà.', en: 'He is older than me.' } },
+            { hanzi: '可能', pinyin: 'kěnéng', definition: 'possible; maybe', level: 4, sentence: { zh: '他可能会来。', py: 'Tā kěnéng huì lái.', en: 'He might come.' } },
+            { hanzi: '应该', pinyin: 'yīnggāi', definition: 'should; ought to', level: 4, sentence: { zh: '你应该休息。', py: 'Nǐ yīnggāi xiūxi.', en: 'You should rest.' } },
+            { hanzi: '必须', pinyin: 'bìxū', definition: 'must; have to', level: 4, sentence: { zh: '我必须学习。', py: 'Wǒ bìxū xuéxí.', en: 'I must study.' } },
+            { hanzi: '可以', pinyin: 'kěyǐ', definition: 'can; may', level: 4, sentence: { zh: '我可以试试。', py: 'Wǒ kěyǐ shìshi.', en: 'I can try.' } },
+            { hanzi: '愿意', pinyin: 'yuànyì', definition: 'willing; wish', level: 4, sentence: { zh: '我愿意帮助你。', py: 'Wǒ yuànyì bāngzhù nǐ.', en: 'I am willing to help you.' } },
+            { hanzi: '需要', pinyin: 'xūyào', definition: 'to need', level: 4, sentence: { zh: '我需要时间。', py: 'Wǒ xūyào shíjiān.', en: 'I need time.' } },
+            { hanzi: '希望', pinyin: 'xīwàng', definition: 'to hope; wish', level: 4, sentence: { zh: '我希望成功。', py: 'Wǒ xīwàng chénggōng.', en: 'I hope to succeed.' } },
+            { hanzi: '觉得', pinyin: 'juéde', definition: 'to feel; to think', level: 4, sentence: { zh: '我觉得很好。', py: 'Wǒ juéde hěn hǎo.', en: 'I feel it is very good.' } },
+            { hanzi: '认为', pinyin: 'rènwéi', definition: 'to think; believe', level: 4, sentence: { zh: '我认为是对的。', py: 'Wǒ rènwéi shì duì de.', en: 'I think it is correct.' } },
+            { hanzi: '知道', pinyin: 'zhīdào', definition: 'to know', level: 4, sentence: { zh: '我知道答案。', py: 'Wǒ zhīdào dáàn.', en: 'I know the answer.' } },
+            { hanzi: '明白', pinyin: 'míngbai', definition: 'to understand', level: 4, sentence: { zh: '我明白了。', py: 'Wǒ míngbai le.', en: 'I understand.' } },
+            { hanzi: '认识', pinyin: 'rènshi', definition: 'to know (a person)', level: 4, sentence: { zh: '我认识他。', py: 'Wǒ rènshi tā.', en: 'I know him.' } },
+            { hanzi: '忘记', pinyin: 'wàngjì', definition: 'to forget', level: 4, sentence: { zh: '我忘记了。', py: 'Wǒ wàngjì le.', en: 'I forgot.' } },
+            { hanzi: '记得', pinyin: 'jìde', definition: 'to remember', level: 4, sentence: { zh: '我记得你。', py: 'Wǒ jìde nǐ.', en: 'I remember you.' } },
+            { hanzi: '告诉', pinyin: 'gàosu', definition: 'to tell', level: 4, sentence: { zh: '告诉我真相。', py: 'Gàosu wǒ zhēnxiàng.', en: 'Tell me the truth.' } },
+            { hanzi: '回答', pinyin: 'huídá', definition: 'to answer', level: 4, sentence: { zh: '请回答问题。', py: 'Qǐng huídá wèntí.', en: 'Please answer the question.' } },
+            { hanzi: '问题', pinyin: 'wèntí', definition: 'question; problem', level: 4, sentence: { zh: '没有问题。', py: 'Méiyǒu wèntí.', en: 'No problem.' } },
+            { hanzi: '答案', pinyin: 'dáàn', definition: 'answer', level: 4, sentence: { zh: '答案是什么？', py: 'Dáàn shì shénme?', en: 'What is the answer?' } },
+            { hanzi: '方法', pinyin: 'fāngfǎ', definition: 'method; way', level: 4, sentence: { zh: '好方法', py: 'hǎo fāngfǎ', en: 'good method' } },
+            { hanzi: '情况', pinyin: 'qíngkuàng', definition: 'situation; condition', level: 4, sentence: { zh: '情况怎么样？', py: 'Qíngkuàng zěnmeyàng?', en: 'How is the situation?' } },
+            { hanzi: '事情', pinyin: 'shìqing', definition: 'thing; matter', level: 4, sentence: { zh: '有重要的事情。', py: 'Yǒu zhòngyào de shìqing.', en: 'There is an important matter.' } },
+            { hanzi: '年龄', pinyin: 'niánlíng', definition: 'age', level: 4, sentence: { zh: '你多大年龄？', py: 'Nǐ duō dà niánlíng?', en: 'How old are you?' } },
+            { hanzi: '道歉', pinyin: 'dàoqiàn', definition: 'to apologize', level: 4, sentence: { zh: '我应该道歉。', py: 'Wǒ yīnggāi dàoqiàn.', en: 'I should apologize.' } },
+            { hanzi: '感谢', pinyin: 'gǎnxiè', definition: 'to thank; gratitude', level: 4, sentence: { zh: '感谢你的帮助。', py: 'Gǎnxiè nǐ de bāngzhù.', en: 'Thank you for your help.' } },
+            { hanzi: '祝贺', pinyin: 'zhùhè', definition: 'to congratulate', level: 4, sentence: { zh: '祝贺你成功！', py: 'Zhùhè nǐ chénggōng!', en: 'Congratulations on your success!' } },
+            { hanzi: '幸福', pinyin: 'xìngfú', definition: 'happiness; happy', level: 4, sentence: { zh: '幸福生活', py: 'xìngfú shēnghuó', en: 'happy life' } },
+            { hanzi: '勇敢', pinyin: 'yǒnggǎn', definition: 'brave; courageous', level: 4, sentence: { zh: '他很勇敢。', py: 'Tā hěn yǒnggǎn.', en: 'He is very brave.' } },
+            { hanzi: '聪明', pinyin: 'cōngmíng', definition: 'clever; smart', level: 4, sentence: { zh: '聪明的孩子', py: 'cōngmíng de háizi', en: 'smart child' } },
+            { hanzi: '努力', pinyin: 'nǔlì', definition: 'hardworking; to strive', level: 4, sentence: { zh: '努力学习', py: 'nǔlì xuéxí', en: 'study hard' } },
+            { hanzi: '认真', pinyin: 'rènzhēn', definition: 'serious; conscientious', level: 4, sentence: { zh: '认真工作', py: 'rènzhēn gōngzuò', en: 'work seriously' } },
+            { hanzi: '小心', pinyin: 'xiǎoxīn', definition: 'careful; to be careful', level: 4, sentence: { zh: '小心开车', py: 'xiǎoxīn kāichē', en: 'drive carefully' } },
+            { hanzi: '注意', pinyin: 'zhùyì', definition: 'to pay attention; to notice', level: 4, sentence: { zh: '注意安全', py: 'zhùyì ānquán', en: 'pay attention to safety' } },
+            { hanzi: '保护', pinyin: 'bǎohù', definition: 'to protect; protection', level: 4, sentence: { zh: '保护环境', py: 'bǎohù huánjìng', en: 'protect the environment' } },
+            { hanzi: '爱护', pinyin: 'àihù', definition: 'to cherish; to take good care of', level: 4, sentence: { zh: '爱护动物', py: 'àihù dòngwù', en: 'cherish animals' } },
+            { hanzi: '珍惜', pinyin: 'zhēnxī', definition: 'to treasure; to value', level: 4, sentence: { zh: '珍惜时间', py: 'zhēnxī shíjiān', en: 'value time' } },
+            { hanzi: '重视', pinyin: 'zhòngshì', definition: 'to attach importance to', level: 4, sentence: { zh: '重视教育', py: 'zhòngshì jiàoyù', en: 'attach importance to education' } },
+            { hanzi: '增强', pinyin: 'zēngqiáng', definition: 'to strengthen; to enhance', level: 4, sentence: { zh: '增强信心', py: 'zēngqiáng xìnxīn', en: 'boost confidence' } },
+            { hanzi: '加强', pinyin: 'jiāqiáng', definition: 'to strengthen; to reinforce', level: 4, sentence: { zh: '加强合作', py: 'jiāqiáng hézuò', en: 'strengthen cooperation' } },
+            { hanzi: '减少', pinyin: 'jiǎnshǎo', definition: 'to reduce; to decrease', level: 4, sentence: { zh: '减少浪费', py: 'jiǎnshǎo làngfèi', en: 'reduce waste' } },
+            { hanzi: '保持', pinyin: 'bǎochí', definition: 'to maintain; to keep', level: 4, sentence: { zh: '保持健康', py: 'bǎochí jiànkāng', en: 'maintain health' } },
+            { hanzi: '不断', pinyin: 'bùduàn', definition: 'continuous; unceasing', level: 4, sentence: { zh: '不断进步', py: 'bùduàn jìnbù', en: 'continuous progress' } },
+            { hanzi: '仔细', pinyin: 'zǐxì', definition: 'careful; meticulous', level: 4, sentence: { zh: '仔细检查', py: 'zǐxì jiǎnchá', en: 'check carefully' } },
+            { hanzi: '从来', pinyin: 'cónglái', definition: 'always; all along', level: 4, sentence: { zh: '我从来不说谎。', py: 'Wǒ cónglái bù shuōhuǎng.', en: 'I never lie.' } },
+            { hanzi: '恐怕', pinyin: 'kǒngpà', definition: 'I am afraid; perhaps', level: 4, sentence: { zh: '恐怕不行。', py: 'Kǒngpà bùxíng.', en: 'I am afraid it will not work.' } },
+            { hanzi: '特别', pinyin: 'tèbié', definition: 'special; especially', level: 4, sentence: { zh: '特别重要', py: 'tèbié zhòngyào', en: 'especially important' } },
+            { hanzi: '十分', pinyin: 'shífēn', definition: 'very; extremely', level: 4, sentence: { zh: '十分感谢', py: 'shífēn gǎnxiè', en: 'very grateful' } },
+            { hanzi: '相当', pinyin: 'xiāngdāng', definition: 'quite; fairly', level: 4, sentence: { zh: '相当好', py: 'xiāngdāng hǎo', en: 'quite good' } },
+            { hanzi: '比较', pinyin: 'bǐjiào', definition: 'comparatively; relatively', level: 4, sentence: { zh: '比较好', py: 'bǐjiào hǎo', en: 'comparatively good' } },
+            { hanzi: '几乎', pinyin: 'jīhū', definition: 'almost; nearly', level: 4, sentence: { zh: '几乎忘了', py: 'jīhū wàng le', en: 'almost forgot' } },
+            { hanzi: '大约', pinyin: 'dàyuē', definition: 'approximately; about', level: 4, sentence: { zh: '大约十个人', py: 'dàyuē shí gè rén', en: 'about ten people' } },
+            { hanzi: '肯定', pinyin: 'kěndìng', definition: 'certainly; definitely', level: 4, sentence: { zh: '我肯定知道。', py: 'Wǒ kěndìng zhīdào.', en: 'I definitely know.' } },
+            { hanzi: '一定', pinyin: 'yídìng', definition: 'must; certainly', level: 4, sentence: { zh: '我一定来。', py: 'Wǒ yídìng lái.', en: 'I will certainly come.' } },
+            { hanzi: '主要', pinyin: 'zhǔyào', definition: 'main; principal', level: 4, sentence: { zh: '主要问题', py: 'zhǔyào wèntí', en: 'main problem' } },
+            { hanzi: '全部', pinyin: 'quánbù', definition: 'all; entire; complete', level: 4, sentence: { zh: '全部完成', py: 'quánbù wánchéng', en: 'all completed' } },
+            { hanzi: '完全', pinyin: 'wánquán', definition: 'completely; fully', level: 4, sentence: { zh: '完全同意', py: 'wánquán tóngyì', en: 'fully agree' } },
+            { hanzi: '直接', pinyin: 'zhíjiē', definition: 'direct; directly', level: 4, sentence: { zh: '直接联系', py: 'zhíjiē liánxì', en: 'contact directly' } },
+            { hanzi: '立刻', pinyin: 'lìkè', definition: 'immediately; at once', level: 4, sentence: { zh: '立刻行动', py: 'lìkè xíngdòng', en: 'act immediately' } },
+            { hanzi: '同时', pinyin: 'tóngshí', definition: 'simultaneously; at the same time', level: 4, sentence: { zh: '同时进行', py: 'tóngshí jìnxíng', en: 'proceed simultaneously' } },
+            { hanzi: '除了', pinyin: 'chúle', definition: 'except; besides', level: 4, sentence: { zh: '除了他，我们都去了。', py: 'Chúle tā, wǒmen dōu qù le.', en: 'Except for him, we all went.' } },
+            { hanzi: '关于', pinyin: 'guānyú', definition: 'about; concerning', level: 4, sentence: { zh: '关于这个问题', py: 'guānyú zhège wèntí', en: 'concerning this question' } },
+            { hanzi: '对于', pinyin: 'duìyú', definition: 'regarding; as for', level: 4, sentence: { zh: '对于我来说', py: 'duìyú wǒ lái shuō', en: 'as for me' } },
+            { hanzi: '按照', pinyin: 'ànzhào', definition: 'according to', level: 4, sentence: { zh: '按照计划', py: 'ànzhào jìhuà', en: 'according to the plan' } },
+            { hanzi: '根据', pinyin: 'gēnjù', definition: 'based on; according to', level: 4, sentence: { zh: '根据调查', py: 'gēnjù diàochá', en: 'based on the survey' } },
+            { hanzi: '通过', pinyin: 'tōngguò', definition: 'through; by means of', level: 4, sentence: { zh: '通过考试', py: 'tōngguò kǎoshì', en: 'pass the exam' } },
+            { hanzi: '经过', pinyin: 'jīngguò', definition: 'to pass; after; through', level: 4, sentence: { zh: '经过努力', py: 'jīngguò nǔlì', en: 'through hard work' } },
+            { hanzi: '为了', pinyin: 'wèile', definition: 'for; in order to', level: 4, sentence: { zh: '为了学习', py: 'wèile xuéxí', en: 'in order to study' } },
+            { hanzi: '由于', pinyin: 'yóuyú', definition: 'due to; because of', level: 4, sentence: { zh: '由于天气原因', py: 'yóuyú tiānqì yuányīn', en: 'due to weather reasons' } },
+            { hanzi: '因此', pinyin: 'yīncǐ', definition: 'therefore; consequently', level: 4, sentence: { zh: '因此，我们决定改变。', py: 'Yīncǐ, wǒmen juédìng gǎibiàn.', en: 'Therefore, we decided to change.' } },
+            { hanzi: '甚至', pinyin: 'shènzhì', definition: 'even; so much so that', level: 4, sentence: { zh: '他甚至不知道。', py: 'Tā shènzhì bù zhīdào.', en: 'He does not even know.' } },
+            { hanzi: '而且', pinyin: 'érqiě', definition: 'and; moreover', level: 4, sentence: { zh: '他聪明而且努力。', py: 'Tā cōngmíng érqiě nǔlì.', en: 'He is smart and hardworking.' } },
+            { hanzi: '不但', pinyin: 'búdàn', definition: 'not only', level: 4, sentence: { zh: '不但我，他也知道。', py: 'Búdàn wǒ, tā yě zhīdào.', en: 'Not only I, but he also knows.' } },
+            { hanzi: '虽然', pinyin: 'suīrán', definition: 'although; though', level: 4, sentence: { zh: '虽然很累，但我很开心。', py: 'Suīrán hěn lèi, dàn wǒ hěn kāixīn.', en: 'Although tired, I am very happy.' } },
+            { hanzi: '不过', pinyin: 'búguò', definition: 'but; however; only', level: 4, sentence: { zh: '不过，我不同意。', py: 'Búguò, wǒ bù tóngyì.', en: 'However, I do not agree.' } },
+            { hanzi: '否则', pinyin: 'fǒuzé', definition: 'otherwise; if not', level: 4, sentence: { zh: '快走，否则会迟到。', py: 'Kuài zǒu, fǒuzé huì chídào.', en: 'Go quickly, otherwise you will be late.' } },
+            { hanzi: '假如', pinyin: 'jiǎrú', definition: 'if; supposing', level: 4, sentence: { zh: '假如明天有雨，就不去了。', py: 'Jiǎrú míngtiān yǒu yǔ, jiù bú qù le.', en: 'If it rains tomorrow, we will not go.' } },
+            { hanzi: '如果', pinyin: 'rúguǒ', definition: 'if; in case', level: 4, sentence: { zh: '如果你来，请告诉我。', py: 'Rúguǒ nǐ lái, qǐng gàosu wǒ.', en: 'If you come, please tell me.' } },
+            { hanzi: '只要', pinyin: 'zhǐyào', definition: 'as long as; provided', level: 4, sentence: { zh: '只要努力，就能成功。', py: 'Zhǐyào nǔlì, jiù néng chénggōng.', en: 'As long as you work hard, you can succeed.' } },
+            { hanzi: '不仅', pinyin: 'bùjǐn', definition: 'not only', level: 4, sentence: { zh: '他不仅聪明，而且勤奋。', py: 'Tā bùjǐn cōngmíng, érqiě qínfèn.', en: 'He is not only smart but also diligent.' } },
+            { hanzi: '水平', pinyin: 'shuǐpíng', definition: 'level; standard', level: 4, sentence: { zh: '提高水平', py: 'tígāo shuǐpíng', en: 'raise the level' } },
+            { hanzi: '程度', pinyin: 'chéngdù', definition: 'degree; level; extent', level: 4, sentence: { zh: '一定程度', py: 'yídìng chéngdù', en: 'to a certain extent' } },
+            { hanzi: '范围', pinyin: 'fànwéi', definition: 'scope; range', level: 4, sentence: { zh: '活动范围', py: 'huódòng fànwéi', en: 'scope of activities' } },
+            { hanzi: '效果', pinyin: 'xiàoguǒ', definition: 'effect; result', level: 4, sentence: { zh: '学习效果', py: 'xuéxí xiàoguǒ', en: 'learning effect' } },
+            { hanzi: '成果', pinyin: 'chéngguǒ', definition: 'achievement; fruit', level: 4, sentence: { zh: '研究成果', py: 'yánjiū chéngguǒ', en: 'research results' } },
+            { hanzi: '成绩', pinyin: 'chéngjì', definition: 'score; grade; achievement', level: 4, sentence: { zh: '考试成绩', py: 'kǎoshì chéngjì', en: 'exam scores' } },
+            { hanzi: '成功', pinyin: 'chénggōng', definition: 'success; to succeed', level: 4, sentence: { zh: '祝你成功。', py: 'Zhù nǐ chénggōng.', en: 'Wish you success.' } },
+            { hanzi: '失败', pinyin: 'shībài', definition: 'failure; to fail', level: 4, sentence: { zh: '失败是成功之母。', py: 'Shībài shì chénggōng zhī mǔ.', en: 'Failure is the mother of success.' } },
+            { hanzi: '胜利', pinyin: 'shènglì', definition: 'victory; to win', level: 4, sentence: { zh: '取得胜利', py: 'qǔdé shènglì', en: 'achieve victory' } },
+            { hanzi: '损失', pinyin: 'sǔnshī', definition: 'loss; to lose', level: 4, sentence: { zh: '减少损失', py: 'jiǎnshǎo sǔnshī', en: 'reduce losses' } },
+            { hanzi: '接受', pinyin: 'jiēshòu', definition: 'to accept', level: 4, sentence: { zh: '接受挑战', py: 'jiēshòu tiǎozhàn', en: 'accept the challenge' } },
+            { hanzi: '拒绝', pinyin: 'jùjué', definition: 'to refuse; to reject', level: 4, sentence: { zh: '拒绝诱惑', py: 'jùjué yòuhuò', en: 'resist temptation' } },
+            { hanzi: '允许', pinyin: 'yǔnxǔ', definition: 'to permit; to allow', level: 4, sentence: { zh: '请允许我介绍。', py: 'Qǐng yǔnxǔ wǒ jièshào.', en: 'Please allow me to introduce.' } },
+            { hanzi: '表扬', pinyin: 'biǎoyáng', definition: 'to praise; to commend', level: 4, sentence: { zh: '老师表扬了他。', py: 'Lǎoshī biǎoyáng le tā.', en: 'The teacher praised him.' } },
+            { hanzi: '批评', pinyin: 'pīpíng', definition: 'to criticize; criticism', level: 4, sentence: { zh: '接受批评', py: 'jiēshòu pīpíng', en: 'accept criticism' } },
+            { hanzi: '重复', pinyin: 'chóngfù', definition: 'to repeat; repetition', level: 4, sentence: { zh: '请重复一遍。', py: 'Qǐng chóngfù yí biàn.', en: 'Please repeat it.' } },
+            { hanzi: '经济', pinyin: 'jīngjì', definition: 'economy; economic', level: 5, sentence: { zh: '经济发展', py: 'jīngjì fāzhǎn', en: 'economic development' } },
+            { hanzi: '社会', pinyin: 'shèhuì', definition: 'society', level: 5, sentence: { zh: '社会发展', py: 'shèhuì fāzhǎn', en: 'social development' } },
+            { hanzi: '文化', pinyin: 'wénhuà', definition: 'culture', level: 5, sentence: { zh: '中国文化', py: 'Zhōngguó wénhuà', en: 'Chinese culture' } },
+            { hanzi: '历史', pinyin: 'lìshǐ', definition: 'history', level: 5, sentence: { zh: '中国历史', py: 'Zhōngguó lìshǐ', en: 'Chinese history' } },
+            { hanzi: '政治', pinyin: 'zhèngzhì', definition: 'politics', level: 5, sentence: { zh: '政治制度', py: 'zhèngzhì zhìdù', en: 'political system' } },
+            { hanzi: '环境', pinyin: 'huánjìng', definition: 'environment', level: 5, sentence: { zh: '保护环境', py: 'bǎohù huánjìng', en: 'protect the environment' } },
+            { hanzi: '教育', pinyin: 'jiàoyù', definition: 'education', level: 5, sentence: { zh: '高等教育', py: 'gāoděng jiàoyù', en: 'higher education' } },
+            { hanzi: '科技', pinyin: 'kējì', definition: 'science and technology', level: 5, sentence: { zh: '科技发展', py: 'kējì fāzhǎn', en: 'technological development' } },
+            { hanzi: '发展', pinyin: 'fāzhǎn', definition: 'to develop; development', level: 5, sentence: { zh: '快速发展', py: 'kuàisù fāzhǎn', en: 'rapid development' } },
+            { hanzi: '改革', pinyin: 'gǎigé', definition: 'reform', level: 5, sentence: { zh: '改革开放', py: 'gǎigé kāifàng', en: 'reform and opening up' } },
+            { hanzi: '开放', pinyin: 'kāifàng', definition: 'to open up; open', level: 5, sentence: { zh: '对外开放', py: 'duìwài kāifàng', en: 'opening to the outside world' } },
+            { hanzi: '建设', pinyin: 'jiànshè', definition: 'to construct; build', level: 5, sentence: { zh: '经济建设', py: 'jīngjì jiànshè', en: 'economic construction' } },
+            { hanzi: '管理', pinyin: 'guǎnlǐ', definition: 'to manage; management', level: 5, sentence: { zh: '企业管理', py: 'qǐyè guǎnlǐ', en: 'enterprise management' } },
+            { hanzi: '服务', pinyin: 'fúwù', definition: 'service', level: 5, sentence: { zh: '为人民服务', py: 'wèi rénmín fúwù', en: 'serve the people' } },
+            { hanzi: '质量', pinyin: 'zhìliàng', definition: 'quality', level: 5, sentence: { zh: '高质量', py: 'gāo zhìliàng', en: 'high quality' } },
+            { hanzi: '效率', pinyin: 'xiàolǜ', definition: 'efficiency', level: 5, sentence: { zh: '提高效率', py: 'tígāo xiàolǜ', en: 'improve efficiency' } },
+            { hanzi: '影响', pinyin: 'yǐngxiǎng', definition: 'influence; affect', level: 5, sentence: { zh: '有影响', py: 'yǒu yǐngxiǎng', en: 'have influence' } },
+            { hanzi: '作用', pinyin: 'zuòyòng', definition: 'role; function', level: 5, sentence: { zh: '起作用', py: 'qǐ zuòyòng', en: 'play a role' } },
+            { hanzi: '意义', pinyin: 'yìyì', definition: 'meaning; significance', level: 5, sentence: { zh: '重要意义', py: 'zhòngyào yìyì', en: 'important significance' } },
+            { hanzi: '价值', pinyin: 'jiàzhí', definition: 'value', level: 5, sentence: { zh: '有价值', py: 'yǒu jiàzhí', en: 'have value' } },
+            { hanzi: '观念', pinyin: 'guānniàn', definition: 'concept; idea', level: 5, sentence: { zh: '更新观念', py: 'gēngxīn guānniàn', en: 'update concepts' } },
+            { hanzi: '态度', pinyin: 'tàidù', definition: 'attitude', level: 5, sentence: { zh: '端正态度', py: 'duānzhèng tàidù', en: 'correct attitude' } },
+            { hanzi: '现象', pinyin: 'xiànxiàng', definition: 'phenomenon', level: 5, sentence: { zh: '社会现象', py: 'shèhuì xiànxiàng', en: 'social phenomenon' } },
+            { hanzi: '趋势', pinyin: 'qūshì', definition: 'trend', level: 5, sentence: { zh: '发展趋势', py: 'fāzhǎn qūshì', en: 'development trend' } },
+            { hanzi: '资源', pinyin: 'zīyuán', definition: 'resource', level: 5, sentence: { zh: '自然资源', py: 'zìrán zīyuán', en: 'natural resources' } },
+            { hanzi: '市场', pinyin: 'shìchǎng', definition: 'market', level: 5, sentence: { zh: '市场发展', py: 'shìchǎng fāzhǎn', en: 'market development' } },
+            { hanzi: '竞争', pinyin: 'jìngzhēng', definition: 'competition', level: 5, sentence: { zh: '市场竞争', py: 'shìchǎng jìngzhēng', en: 'market competition' } },
+            { hanzi: '优势', pinyin: 'yōushì', definition: 'advantage', level: 5, sentence: { zh: '有优势', py: 'yǒu yōushì', en: 'have an advantage' } },
+            { hanzi: '挑战', pinyin: 'tiǎozhàn', definition: 'challenge', level: 5, sentence: { zh: '迎接挑战', py: 'yíngjiē tiǎozhàn', en: 'meet the challenge' } },
+            { hanzi: '合作', pinyin: 'hézuò', definition: 'cooperation', level: 5, sentence: { zh: '国际合作', py: 'guójì hézuò', en: 'international cooperation' } },
+            { hanzi: '组织', pinyin: 'zǔzhī', definition: 'organization; to organize', level: 5, sentence: { zh: '组织活动', py: 'zǔzhī huódòng', en: 'organize activities' } },
+            { hanzi: '机构', pinyin: 'jīgòu', definition: 'institution; organization', level: 5, sentence: { zh: '教育机构', py: 'jiàoyù jīgòu', en: 'educational institution' } },
+            { hanzi: '项目', pinyin: 'xiàngmù', definition: 'project; item', level: 5, sentence: { zh: '投资项目', py: 'tóuzī xiàngmù', en: 'investment project' } },
+            { hanzi: '产品', pinyin: 'chǎnpǐn', definition: 'product', level: 5, sentence: { zh: '产品质量', py: 'chǎnpǐn zhìliàng', en: 'product quality' } },
+            { hanzi: '技术', pinyin: 'jìshù', definition: 'technology; skill', level: 5, sentence: { zh: '信息技术', py: 'xìnxī jìshù', en: 'information technology' } },
+            { hanzi: '研发', pinyin: 'yánfā', definition: 'research and development', level: 5, sentence: { zh: '研发新产品', py: 'yánfā xīn chǎnpǐn', en: 'develop new products' } },
+            { hanzi: '资金', pinyin: 'zījīn', definition: 'funds; capital', level: 5, sentence: { zh: '筹集资金', py: 'chóují zījīn', en: 'raise funds' } },
+            { hanzi: '需求', pinyin: 'xūqiú', definition: 'demand; need', level: 5, sentence: { zh: '市场需求', py: 'shìchǎng xūqiú', en: 'market demand' } },
+            { hanzi: '供给', pinyin: 'gōngjǐ', definition: 'supply', level: 5, sentence: { zh: '供求关系', py: 'gōngqiú guānxì', en: 'supply and demand relationship' } },
+            { hanzi: '投资', pinyin: 'tóuzī', definition: 'to invest; investment', level: 5, sentence: { zh: '投资教育', py: 'tóuzī jiàoyù', en: 'invest in education' } },
+            { hanzi: '预算', pinyin: 'yùsuàn', definition: 'budget', level: 5, sentence: { zh: '年度预算', py: 'niándù yùsuàn', en: 'annual budget' } },
+            { hanzi: '财务', pinyin: 'cáiwù', definition: 'finance; financial affairs', level: 5, sentence: { zh: '财务管理', py: 'cáiwù guǎnlǐ', en: 'financial management' } },
+            { hanzi: '盈利', pinyin: 'yínglì', definition: 'profit; to make a profit', level: 5, sentence: { zh: '企业盈利', py: 'qǐyè yínglì', en: 'enterprise profit' } },
+            { hanzi: '成本', pinyin: 'chéngběn', definition: 'cost', level: 5, sentence: { zh: '降低成本', py: 'jiàngdī chéngběn', en: 'reduce costs' } },
+            { hanzi: '利润', pinyin: 'lìrùn', definition: 'profit', level: 5, sentence: { zh: '高利润', py: 'gāo lìrùn', en: 'high profit' } },
+            { hanzi: '销售', pinyin: 'xiāoshòu', definition: 'to sell; sales', level: 5, sentence: { zh: '销售业绩', py: 'xiāoshòu yèjì', en: 'sales performance' } },
+            { hanzi: '推广', pinyin: 'tuīguǎng', definition: 'to promote; to popularize', level: 5, sentence: { zh: '市场推广', py: 'shìchǎng tuīguǎng', en: 'market promotion' } },
+            { hanzi: '策划', pinyin: 'cèhuà', definition: 'to plan; planning', level: 5, sentence: { zh: '活动策划', py: 'huódòng cèhuà', en: 'event planning' } },
+            { hanzi: '执行', pinyin: 'zhíxíng', definition: 'to execute; to implement', level: 5, sentence: { zh: '严格执行', py: 'yángé zhíxíng', en: 'strictly implement' } },
+            { hanzi: '设计', pinyin: 'shèjì', definition: 'to design; design', level: 5, sentence: { zh: '产品设计', py: 'chǎnpǐn shèjì', en: 'product design' } },
+            { hanzi: '标准', pinyin: 'biāozhǔn', definition: 'standard', level: 5, sentence: { zh: '质量标准', py: 'zhìliàng biāozhǔn', en: 'quality standard' } },
+            { hanzi: '流程', pinyin: 'liúchéng', definition: 'process; workflow', level: 5, sentence: { zh: '工作流程', py: 'gōngzuò liúchéng', en: 'workflow' } },
+            { hanzi: '方案', pinyin: 'fāng\'àn', definition: 'plan; scheme', level: 5, sentence: { zh: '制定方案', py: 'zhìdìng fāng\'àn', en: 'formulate a plan' } },
+            { hanzi: '报告', pinyin: 'bàogào', definition: 'report', level: 5, sentence: { zh: '工作报告', py: 'gōngzuò bàogào', en: 'work report' } },
+            { hanzi: '会议', pinyin: 'huìyì', definition: 'meeting; conference', level: 5, sentence: { zh: '参加会议', py: 'cānjiā huìyì', en: 'attend a meeting' } },
+            { hanzi: '讨论', pinyin: 'tǎolùn', definition: 'to discuss; discussion', level: 5, sentence: { zh: '讨论问题', py: 'tǎolùn wèntí', en: 'discuss problems' } },
+            { hanzi: '总结', pinyin: 'zǒngjié', definition: 'to summarize; summary', level: 5, sentence: { zh: '总结经验', py: 'zǒngjié jīngyàn', en: 'summarize experience' } },
+            { hanzi: '培训', pinyin: 'péixùn', definition: 'to train; training', level: 5, sentence: { zh: '员工培训', py: 'yuángōng péixùn', en: 'employee training' } },
+            { hanzi: '招聘', pinyin: 'zhāopìn', definition: 'to recruit; recruitment', level: 5, sentence: { zh: '招聘人才', py: 'zhāopìn réncái', en: 'recruit talent' } },
+            { hanzi: '面试', pinyin: 'miànshì', definition: 'interview', level: 5, sentence: { zh: '面试机会', py: 'miànshì jīhuì', en: 'interview opportunity' } },
+            { hanzi: '工资', pinyin: 'gōngzī', definition: 'wages; salary', level: 5, sentence: { zh: '提高工资', py: 'tígāo gōngzī', en: 'raise wages' } },
+            { hanzi: '待遇', pinyin: 'dàiyù', definition: 'treatment; benefits', level: 5, sentence: { zh: '待遇不错', py: 'dàiyù búcuò', en: 'good benefits' } },
+            { hanzi: '福利', pinyin: 'fúlì', definition: 'welfare; benefits', level: 5, sentence: { zh: '社会福利', py: 'shèhuì fúlì', en: 'social welfare' } },
+            { hanzi: '关系', pinyin: 'guānxì', definition: 'relationship; relation', level: 5, sentence: { zh: '人际关系', py: 'rénjì guānxì', en: 'interpersonal relationship' } },
+            { hanzi: '联系', pinyin: 'liánxì', definition: 'to contact; connection', level: 5, sentence: { zh: '保持联系', py: 'bǎochí liánxì', en: 'stay in touch' } },
+            { hanzi: '交流', pinyin: 'jiāoliú', definition: 'to exchange; communication', level: 5, sentence: { zh: '文化交流', py: 'wénhuà jiāoliú', en: 'cultural exchange' } },
+            { hanzi: '时尚', pinyin: 'shíshàng', definition: 'fashion; trendy', level: 5, sentence: { zh: '时尚潮流', py: 'shíshàng cháoliú', en: 'fashion trend' } },
+            { hanzi: '风格', pinyin: 'fēnggé', definition: 'style', level: 5, sentence: { zh: '独特风格', py: 'dútè fēnggé', en: 'unique style' } },
+            { hanzi: '品牌', pinyin: 'pǐnpái', definition: 'brand', level: 5, sentence: { zh: '知名品牌', py: 'zhīmíng pǐnpái', en: 'well-known brand' } },
+            { hanzi: '消费', pinyin: 'xiāofèi', definition: 'to consume; consumption', level: 5, sentence: { zh: '理性消费', py: 'lǐxìng xiāofèi', en: 'rational consumption' } },
+            { hanzi: '贷款', pinyin: 'dàikuǎn', definition: 'loan; to lend', level: 5, sentence: { zh: '银行贷款', py: 'yínháng dàikuǎn', en: 'bank loan' } },
+            { hanzi: '保险', pinyin: 'bǎoxiǎn', definition: 'insurance', level: 5, sentence: { zh: '医疗保险', py: 'yīliáo bǎoxiǎn', en: 'health insurance' } },
+            { hanzi: '股票', pinyin: 'gǔpiào', definition: 'stock; share', level: 5, sentence: { zh: '股票市场', py: 'gǔpiào shìchǎng', en: 'stock market' } },
+            { hanzi: '收入', pinyin: 'shōurù', definition: 'income; revenue', level: 5, sentence: { zh: '个人收入', py: 'gèrén shōurù', en: 'personal income' } },
+            { hanzi: '支出', pinyin: 'zhīchū', definition: 'expenditure; to spend', level: 5, sentence: { zh: '控制支出', py: 'kòngzhì zhīchū', en: 'control expenditure' } },
+            { hanzi: '税收', pinyin: 'shuìshōu', definition: 'taxation; tax revenue', level: 5, sentence: { zh: '税收政策', py: 'shuìshōu zhèngcè', en: 'tax policy' } },
+            { hanzi: '财政', pinyin: 'cáizhèng', definition: 'finance; public finance', level: 5, sentence: { zh: '财政部门', py: 'cáizhèng bùmén', en: 'financial department' } },
+            { hanzi: '金融', pinyin: 'jīnróng', definition: 'finance; banking', level: 5, sentence: { zh: '金融危机', py: 'jīnróng wēijī', en: 'financial crisis' } },
+            { hanzi: '贸易', pinyin: 'màoyì', definition: 'trade; commerce', level: 5, sentence: { zh: '国际贸易', py: 'guójì màoyì', en: 'international trade' } },
+            { hanzi: '出口', pinyin: 'chūkǒu', definition: 'to export; export', level: 5, sentence: { zh: '出口商品', py: 'chūkǒu shāngpǐn', en: 'export goods' } },
+            { hanzi: '进口', pinyin: 'jìnkǒu', definition: 'to import; import', level: 5, sentence: { zh: '进口产品', py: 'jìnkǒu chǎnpǐn', en: 'imported products' } },
+            { hanzi: '运输', pinyin: 'yùnshū', definition: 'to transport; transportation', level: 5, sentence: { zh: '交通运输', py: 'jiāotōng yùnshū', en: 'transportation' } },
+            { hanzi: '物流', pinyin: 'wùliú', definition: 'logistics', level: 5, sentence: { zh: '物流管理', py: 'wùliú guǎnlǐ', en: 'logistics management' } },
+            { hanzi: '就业', pinyin: 'jiùyè', definition: 'to get a job; employment', level: 5, sentence: { zh: '就业机会', py: 'jiùyè jīhuì', en: 'employment opportunities' } },
+            { hanzi: '失业', pinyin: 'shīyè', definition: 'unemployment', level: 5, sentence: { zh: '失业率', py: 'shīyè lǜ', en: 'unemployment rate' } },
+            { hanzi: '实习', pinyin: 'shíxí', definition: 'internship; to intern', level: 5, sentence: { zh: '实习经历', py: 'shíxí jīnglì', en: 'internship experience' } },
+            { hanzi: '晋升', pinyin: 'jìnshēng', definition: 'to promote; promotion', level: 5, sentence: { zh: '获得晋升', py: 'huòdé jìnshēng', en: 'get promoted' } },
+            { hanzi: '退休', pinyin: 'tuìxiū', definition: 'to retire; retirement', level: 5, sentence: { zh: '退休生活', py: 'tuìxiū shēnghuó', en: 'retirement life' } },
+            { hanzi: '加班', pinyin: 'jiābān', definition: 'to work overtime', level: 5, sentence: { zh: '加班工作', py: 'jiābān gōngzuò', en: 'work overtime' } },
+            { hanzi: '出差', pinyin: 'chūchāi', definition: 'business trip', level: 5, sentence: { zh: '出差外地', py: 'chūchāi wàidì', en: 'go on a business trip' } },
+            { hanzi: '休假', pinyin: 'xiūjià', definition: 'to take a vacation', level: 5, sentence: { zh: '带薪休假', py: 'dàixīn xiūjià', en: 'paid vacation' } },
+            { hanzi: '请假', pinyin: 'qǐngjià', definition: 'to ask for leave', level: 5, sentence: { zh: '请病假', py: 'qǐng bìngjià', en: 'take sick leave' } },
+            { hanzi: '迟到', pinyin: 'chídào', definition: 'to arrive late', level: 5, sentence: { zh: '不要迟到', py: 'búyào chídào', en: 'do not be late' } },
+            { hanzi: '医疗', pinyin: 'yīliáo', definition: 'medical treatment', level: 5, sentence: { zh: '医疗服务', py: 'yīliáo fúwù', en: 'medical service' } },
+            { hanzi: '养老', pinyin: 'yǎnglǎo', definition: 'to provide for the aged', level: 5, sentence: { zh: '养老保险', py: 'yǎnglǎo bǎoxiǎn', en: 'old-age insurance' } },
+            { hanzi: '包装', pinyin: 'bāozhuāng', definition: 'to pack; packaging', level: 5, sentence: { zh: '产品包装', py: 'chǎnpǐn bāozhuāng', en: 'product packaging' } },
+            { hanzi: '仓储', pinyin: 'cāngchǔ', definition: 'warehousing; storage', level: 5, sentence: { zh: '仓储管理', py: 'cāngchǔ guǎnlǐ', en: 'warehouse management' } },
+            { hanzi: '证券', pinyin: 'zhèngquàn', definition: 'securities; stocks', level: 5, sentence: { zh: '证券市场', py: 'zhèngquàn shìchǎng', en: 'securities market' } },
+            { hanzi: '哲学', pinyin: 'zhéxué', definition: 'philosophy', level: 6, sentence: { zh: '中国哲学', py: 'Zhōngguó zhéxué', en: 'Chinese philosophy' } },
+            { hanzi: '理论', pinyin: 'lǐlùn', definition: 'theory', level: 6, sentence: { zh: '科学理论', py: 'kēxué lǐlùn', en: 'scientific theory' } },
+            { hanzi: '实践', pinyin: 'shíjiàn', definition: 'practice', level: 6, sentence: { zh: '社会实践', py: 'shèhuì shíjiàn', en: 'social practice' } },
+            { hanzi: '经验', pinyin: 'jīngyàn', definition: 'experience', level: 6, sentence: { zh: '工作经验', py: 'gōngzuò jīngyàn', en: 'work experience' } },
+            { hanzi: '教训', pinyin: 'jiàoxun', definition: 'lesson; moral', level: 6, sentence: { zh: '吸取教训', py: 'xīqǔ jiàoxun', en: 'draw lessons' } },
+            { hanzi: '原则', pinyin: 'yuánzé', definition: 'principle', level: 6, sentence: { zh: '基本原则', py: 'jīběn yuánzé', en: 'basic principle' } },
+            { hanzi: '政策', pinyin: 'zhèngcè', definition: 'policy', level: 6, sentence: { zh: '国家政策', py: 'guójiā zhèngcè', en: 'national policy' } },
+            { hanzi: '制度', pinyin: 'zhìdù', definition: 'system', level: 6, sentence: { zh: '社会主义制度', py: 'shèhuì zhǔyì zhìdù', en: 'socialist system' } },
+            { hanzi: '机制', pinyin: 'jīzhì', definition: 'mechanism', level: 6, sentence: { zh: '运行机制', py: 'yùnxíng jīzhì', en: 'operating mechanism' } },
+            { hanzi: '结构', pinyin: 'jiégòu', definition: 'structure', level: 6, sentence: { zh: '经济结构', py: 'jīngjì jiégòu', en: 'economic structure' } },
+            { hanzi: '体系', pinyin: 'tǐxì', definition: 'system', level: 6, sentence: { zh: '完整体系', py: 'wánzhěng tǐxì', en: 'complete system' } },
+            { hanzi: '格局', pinyin: 'géjú', definition: 'pattern; structure', level: 6, sentence: { zh: '世界格局', py: 'shìjiè géjú', en: 'world pattern' } },
+            { hanzi: '战略', pinyin: 'zhànlüè', definition: 'strategy', level: 6, sentence: { zh: '发展战略', py: 'fāzhǎn zhànlüè', en: 'development strategy' } },
+            { hanzi: '策略', pinyin: 'cèlüè', definition: 'tactics', level: 6, sentence: { zh: '营销策略', py: 'yíngxiāo cèlüè', en: 'marketing tactics' } },
+            { hanzi: '方针', pinyin: 'fāngzhēn', definition: 'policy; guideline', level: 6, sentence: { zh: '基本方针', py: 'jīběn fāngzhēn', en: 'basic guideline' } },
+            { hanzi: '目标', pinyin: 'mùbiāo', definition: 'goal; target', level: 6, sentence: { zh: '奋斗目标', py: 'fèndòu mùbiāo', en: 'struggle goal' } },
+            { hanzi: '任务', pinyin: 'rènwu', definition: 'task; mission', level: 6, sentence: { zh: '历史任务', py: 'lìshǐ rènwu', en: 'historical mission' } },
+            { hanzi: '责任', pinyin: 'zérèn', definition: 'responsibility', level: 6, sentence: { zh: '社会责任', py: 'shèhuì zérèn', en: 'social responsibility' } },
+            { hanzi: '义务', pinyin: 'yìwù', definition: 'obligation; duty', level: 6, sentence: { zh: '公民义务', py: 'gōngmín yìwù', en: 'citizen obligation' } },
+            { hanzi: '权利', pinyin: 'quánlì', definition: 'right; power', level: 6, sentence: { zh: '合法权益', py: 'héfǎ quánlì', en: 'legal rights' } },
+            { hanzi: '利益', pinyin: 'lìyì', definition: 'benefit; interest', level: 6, sentence: { zh: '共同利益', py: 'gòngtóng lìyì', en: 'common interests' } },
+            { hanzi: '矛盾', pinyin: 'máodùn', definition: 'contradiction', level: 6, sentence: { zh: '主要矛盾', py: 'zhǔyào máodùn', en: 'principal contradiction' } },
+            { hanzi: '和谐', pinyin: 'héxié', definition: 'harmony', level: 6, sentence: { zh: '和谐社会', py: 'héxié shèhuì', en: 'harmonious society' } },
+            { hanzi: '抽象', pinyin: 'chōuxiàng', definition: 'abstract', level: 6, sentence: { zh: '抽象概念', py: 'chōuxiàng gàiniàn', en: 'abstract concept' } },
+            { hanzi: '表达', pinyin: 'biǎodá', definition: 'to express', level: 6, sentence: { zh: '表达想法', py: 'biǎodá xiǎngfǎ', en: 'express ideas' } },
+            { hanzi: '采纳', pinyin: 'cǎinà', definition: 'to adopt; to accept', level: 6, sentence: { zh: '采纳建议', py: 'cǎinà jiànyì', en: 'adopt a suggestion' } },
+            { hanzi: '参与', pinyin: 'cānyù', definition: 'to participate', level: 6, sentence: { zh: '参与活动', py: 'cānyù huódòng', en: 'participate in activities' } },
+            { hanzi: '阐述', pinyin: 'chǎnshù', definition: 'to elaborate; to expound', level: 6, sentence: { zh: '阐述观点', py: 'chǎnshù guāndiǎn', en: 'expound one view' } },
+            { hanzi: '倡导', pinyin: 'chàngdǎo', definition: 'to advocate; to initiate', level: 6, sentence: { zh: '倡导环保', py: 'chàngdǎo huánbǎo', en: 'advocate environmental protection' } },
+            { hanzi: '超越', pinyin: 'chāoyuè', definition: 'to surpass; to transcend', level: 6, sentence: { zh: '超越自我', py: 'chāoyuè zìwǒ', en: 'surpass oneself' } },
+            { hanzi: '沉淀', pinyin: 'chéndiàn', definition: 'to settle; sediment', level: 6, sentence: { zh: '文化沉淀', py: 'wénhuà chéndiàn', en: 'cultural sediment' } },
+            { hanzi: '成立', pinyin: 'chénglì', definition: 'to establish; to found', level: 6, sentence: { zh: '成立公司', py: 'chénglì gōngsī', en: 'establish a company' } },
+            { hanzi: '成效', pinyin: 'chéngxiào', definition: 'effect; result', level: 6, sentence: { zh: '取得成效', py: 'qǔdé chéngxiào', en: 'achieve results' } },
+            { hanzi: '持续', pinyin: 'chíxù', definition: 'to continue; sustainable', level: 6, sentence: { zh: '持续发展', py: 'chíxù fāzhǎn', en: 'sustainable development' } },
+            { hanzi: '冲突', pinyin: 'chōngtū', definition: 'conflict', level: 6, sentence: { zh: '避免冲突', py: 'bìmiǎn chōngtū', en: 'avoid conflict' } },
+            { hanzi: '崇高', pinyin: 'chónggāo', definition: 'lofty; sublime', level: 6, sentence: { zh: '崇高理想', py: 'chónggāo lǐxiǎng', en: 'lofty ideal' } },
+            { hanzi: '储备', pinyin: 'chǔbèi', definition: 'to reserve; reserve', level: 6, sentence: { zh: '粮食储备', py: 'liángshi chǔbèi', en: 'grain reserve' } },
+            { hanzi: '创新', pinyin: 'chuàngxīn', definition: 'innovation', level: 6, sentence: { zh: '科技创新', py: 'kējì chuàngxīn', en: 'technological innovation' } },
+            { hanzi: '创造', pinyin: 'chuàngzào', definition: 'to create', level: 6, sentence: { zh: '创造价值', py: 'chuàngzào jiàzhí', en: 'create value' } },
+            { hanzi: '纯粹', pinyin: 'chúncuì', definition: 'pure; sheer', level: 6, sentence: { zh: '纯粹的人', py: 'chúncuì de rén', en: 'a pure person' } },
+            { hanzi: '慈善', pinyin: 'císhàn', definition: 'charity; charitable', level: 6, sentence: { zh: '慈善事业', py: 'císhàn shìyè', en: 'charity work' } },
+            { hanzi: '促进', pinyin: 'cùjìn', definition: 'to promote; to advance', level: 6, sentence: { zh: '促进发展', py: 'cùjìn fāzhǎn', en: 'promote development' } },
+            { hanzi: '担当', pinyin: 'dāndāng', definition: 'to take on; to assume', level: 6, sentence: { zh: '担当责任', py: 'dāndāng zérèn', en: 'take responsibility' } },
+            { hanzi: '导向', pinyin: 'dǎoxiàng', definition: 'to guide; guidance', level: 6, sentence: { zh: '正确导向', py: 'zhèngquè dǎoxiàng', en: 'correct guidance' } },
+            { hanzi: '抵制', pinyin: 'dǐzhì', definition: 'to resist; to boycott', level: 6, sentence: { zh: '抵制诱惑', py: 'dǐzhì yòuhuò', en: 'resist temptation' } },
+            { hanzi: '独立', pinyin: 'dúlì', definition: 'independent', level: 6, sentence: { zh: '独立思考', py: 'dúlì sīkǎo', en: 'think independently' } },
+            { hanzi: '独特', pinyin: 'dútè', definition: 'unique; distinctive', level: 6, sentence: { zh: '独特风格', py: 'dútè fēnggé', en: 'unique style' } },
+            { hanzi: '对策', pinyin: 'duìcè', definition: 'countermeasure; solution', level: 6, sentence: { zh: '制定对策', py: 'zhìdìng duìcè', en: 'formulate countermeasures' } },
+            { hanzi: '发挥', pinyin: 'fāhuī', definition: 'to bring into play; to unleash', level: 6, sentence: { zh: '发挥作用', py: 'fāhuī zuòyòng', en: 'play a role' } },
+            { hanzi: '繁荣', pinyin: 'fánróng', definition: 'prosperous; flourishing', level: 6, sentence: { zh: '经济繁荣', py: 'jīngjì fánróng', en: 'economic prosperity' } },
+            { hanzi: '反抗', pinyin: 'fǎnkàng', definition: 'to resist; to rebel', level: 6, sentence: { zh: '反抗压迫', py: 'fǎnkàng yāpò', en: 'resist oppression' } },
+            { hanzi: '分析', pinyin: 'fēnxī', definition: 'to analyze', level: 6, sentence: { zh: '分析问题', py: 'fēnxī wèntí', en: 'analyze problems' } },
+            { hanzi: '奉献', pinyin: 'fèngxiàn', definition: 'to dedicate; to devote', level: 6, sentence: { zh: '无私奉献', py: 'wúsī fèngxiàn', en: 'selfless dedication' } },
+            { hanzi: '扶持', pinyin: 'fúchí', definition: 'to support; to assist', level: 6, sentence: { zh: '扶持中小企业', py: 'fúchí zhōngxiǎo qǐyè', en: 'support small and medium enterprises' } },
+            { hanzi: '复兴', pinyin: 'fùxīng', definition: 'to revive; renaissance', level: 6, sentence: { zh: '文化复兴', py: 'wénhuà fùxīng', en: 'cultural renaissance' } },
+            { hanzi: '赋予', pinyin: 'fùyǔ', definition: 'to give; to entrust', level: 6, sentence: { zh: '赋予权力', py: 'fùyǔ quánlì', en: 'grant authority' } },
+            { hanzi: '沟通', pinyin: 'gōutōng', definition: 'to communicate', level: 6, sentence: { zh: '有效沟通', py: 'yǒuxiào gōutōng', en: 'effective communication' } },
+            { hanzi: '构建', pinyin: 'gòujiàn', definition: 'to construct; to build', level: 6, sentence: { zh: '构建体系', py: 'gòujiàn tǐxì', en: 'build a system' } },
+            { hanzi: '鼓励', pinyin: 'gǔlì', definition: 'to encourage', level: 6, sentence: { zh: '鼓励创新', py: 'gǔlì chuàngxīn', en: 'encourage innovation' } },
+            { hanzi: '关联', pinyin: 'guānlián', definition: 'to relate; correlation', level: 6, sentence: { zh: '紧密关联', py: 'jǐnmì guānlián', en: 'closely related' } },
+            { hanzi: '贯彻', pinyin: 'guànchè', definition: 'to implement; to carry out', level: 6, sentence: { zh: '贯彻政策', py: 'guànchè zhèngcè', en: 'implement policies' } },
+            { hanzi: '规范', pinyin: 'guīfàn', definition: 'standard; norm', level: 6, sentence: { zh: '行为规范', py: 'xíngwéi guīfàn', en: 'code of conduct' } },
+            { hanzi: '规划', pinyin: 'guīhuà', definition: 'to plan; planning', level: 6, sentence: { zh: '发展规划', py: 'fāzhǎn guīhuà', en: 'development plan' } },
+            { hanzi: '过渡', pinyin: 'guòdù', definition: 'transition; interim', level: 6, sentence: { zh: '过渡时期', py: 'guòdù shíqī', en: 'transition period' } },
+            { hanzi: '核心', pinyin: 'héxīn', definition: 'core; kernel', level: 6, sentence: { zh: '核心价值观', py: 'héxīn jiàzhíguān', en: 'core values' } },
+            { hanzi: '忽视', pinyin: 'hūshì', definition: 'to neglect; to overlook', level: 6, sentence: { zh: '忽视安全', py: 'hūshì ānquán', en: 'neglect safety' } },
+            { hanzi: '化解', pinyin: 'huàjiě', definition: 'to resolve; to defuse', level: 6, sentence: { zh: '化解矛盾', py: 'huàjiě máodùn', en: 'resolve contradictions' } },
+            { hanzi: '活跃', pinyin: 'huóyuè', definition: 'active; lively', level: 6, sentence: { zh: '活跃气氛', py: 'huóyuè qìfēn', en: 'liven up the atmosphere' } },
+            { hanzi: '激励', pinyin: 'jīlì', definition: 'to motivate; to inspire', level: 6, sentence: { zh: '激励机制', py: 'jīlì jīzhì', en: 'incentive mechanism' } },
+            { hanzi: '继承', pinyin: 'jìchéng', definition: 'to inherit', level: 6, sentence: { zh: '继承传统', py: 'jìchéng chuántǒng', en: 'inherit traditions' } },
+            { hanzi: '监督', pinyin: 'jiāndū', definition: 'to supervise', level: 6, sentence: { zh: '社会监督', py: 'shèhuì jiāndū', en: 'social supervision' } },
+            { hanzi: '检验', pinyin: 'jiǎnyàn', definition: 'to test; to examine', level: 6, sentence: { zh: '质量检验', py: 'zhìliàng jiǎnyàn', en: 'quality inspection' } },
+            { hanzi: '健全', pinyin: 'jiànquán', definition: 'sound; perfect; to improve', level: 6, sentence: { zh: '健全制度', py: 'jiànquán zhìdù', en: 'improve the system' } },
+            { hanzi: '建议', pinyin: 'jiànyì', definition: 'suggestion; to suggest', level: 6, sentence: { zh: '提出建议', py: 'tíchū jiànyì', en: 'make a suggestion' } },
+            { hanzi: '阶段', pinyin: 'jiēduàn', definition: 'stage; phase', level: 6, sentence: { zh: '发展阶段', py: 'fāzhǎn jiēduàn', en: 'development stage' } },
+            { hanzi: '杰出', pinyin: 'jiéchū', definition: 'outstanding; distinguished', level: 6, sentence: { zh: '杰出贡献', py: 'jiéchū gòngxiàn', en: 'outstanding contribution' } },
+            { hanzi: '紧迫', pinyin: 'jǐnpò', definition: 'urgent; pressing', level: 6, sentence: { zh: '时间紧迫', py: 'shíjiān jǐnpò', en: 'time is pressing' } },
+            { hanzi: '谨慎', pinyin: 'jǐnshèn', definition: 'cautious; prudent', level: 6, sentence: { zh: '谨慎行事', py: 'jǐnshèn xíngshì', en: 'act cautiously' } },
+            { hanzi: '经典', pinyin: 'jīngdiǎn', definition: 'classic; classical', level: 6, sentence: { zh: '经典作品', py: 'jīngdiǎn zuòpǐn', en: 'classic works' } },
+            { hanzi: '局限', pinyin: 'júxiàn', definition: 'limitation; to limit', level: 6, sentence: { zh: '有局限性', py: 'yǒu júxiànxìng', en: 'have limitations' } },
+            { hanzi: '决策', pinyin: 'juécè', definition: 'decision-making', level: 6, sentence: { zh: '科学决策', py: 'kēxué juécè', en: 'scientific decision-making' } },
+            { hanzi: '开发', pinyin: 'kāifā', definition: 'to develop; to exploit', level: 6, sentence: { zh: '软件开发', py: 'ruǎnjiàn kāifā', en: 'software development' } },
+            { hanzi: '开拓', pinyin: 'kāituò', definition: 'to open up; to pioneer', level: 6, sentence: { zh: '开拓市场', py: 'kāituò shìchǎng', en: 'open up markets' } },
+            { hanzi: '开展', pinyin: 'kāizhǎn', definition: 'to launch; to develop', level: 6, sentence: { zh: '开展活动', py: 'kāizhǎn huódòng', en: 'carry out activities' } },
+            { hanzi: '考验', pinyin: 'kǎoyàn', definition: 'to test; trial', level: 6, sentence: { zh: '经受考验', py: 'jīngshòu kǎoyàn', en: 'undergo trials' } },
+            { hanzi: '客观', pinyin: 'kèguān', definition: 'objective', level: 6, sentence: { zh: '客观事实', py: 'kèguān shìshí', en: 'objective facts' } },
+            { hanzi: '扩展', pinyin: 'kuòzhǎn', definition: 'to expand; to extend', level: 6, sentence: { zh: '业务扩展', py: 'yèwù kuòzhǎn', en: 'business expansion' } },
+            { hanzi: '灵活', pinyin: 'línghuó', definition: 'flexible; agile', level: 6, sentence: { zh: '灵活运用', py: 'línghuó yùnyòng', en: 'flexible application' } },
+            { hanzi: '论坛', pinyin: 'lùntán', definition: 'forum', level: 6, sentence: { zh: '经济论坛', py: 'jīngjì lùntán', en: 'economic forum' } },
+            { hanzi: '描绘', pinyin: 'miáohuì', definition: 'to depict; to portray', level: 6, sentence: { zh: '描绘未来', py: 'miáohuì wèilái', en: 'depict the future' } },
+            { hanzi: '敏感', pinyin: 'mǐngǎn', definition: 'sensitive', level: 6, sentence: { zh: '敏感话题', py: 'mǐngǎn huàtí', en: 'sensitive topic' } },
+            { hanzi: '面临', pinyin: 'miànlín', definition: 'to face; to confront', level: 6, sentence: { zh: '面临挑战', py: 'miànlín tiǎozhàn', en: 'face challenges' } },
+            { hanzi: '描述', pinyin: 'miáoshù', definition: 'to describe', level: 6, sentence: { zh: '详细描述', py: 'xiángxì miáoshù', en: 'detailed description' } },
+            { hanzi: '模式', pinyin: 'móshì', definition: 'mode; pattern', level: 6, sentence: { zh: '管理模式', py: 'guǎnlǐ móshì', en: 'management model' } },
+            { hanzi: '内涵', pinyin: 'nèihán', definition: 'connotation; meaning', level: 6, sentence: { zh: '文化内涵', py: 'wénhuà nèihán', en: 'cultural connotation' } },
+            { hanzi: '凝聚', pinyin: 'níngjù', definition: 'to condense; to embody', level: 6, sentence: { zh: '凝聚力量', py: 'níngjù lìliàng', en: 'gather strength' } },
+            { hanzi: '评估', pinyin: 'pínggū', definition: 'to evaluate; assessment', level: 6, sentence: { zh: '风险评估', py: 'fēngxiǎn pínggū', en: 'risk assessment' } },
+            { hanzi: '奇迹', pinyin: 'qíjì', definition: 'miracle; wonder', level: 6, sentence: { zh: '创造奇迹', py: 'chuàngzào qíjì', en: 'create a miracle' } },
+            { hanzi: '启发', pinyin: 'qǐfā', definition: 'to inspire; inspiration', level: 6, sentence: { zh: '启发思考', py: 'qǐfā sīkǎo', en: 'inspire thinking' } },
+            { hanzi: '前提', pinyin: 'qiántí', definition: 'prerequisite; premise', level: 6, sentence: { zh: '重要前提', py: 'zhòngyào qiántí', en: 'important prerequisite' } },
+            { hanzi: '潜力', pinyin: 'qiánlì', definition: 'potential; capacity', level: 6, sentence: { zh: '发展潜力', py: 'fāzhǎn qiánlì', en: 'development potential' } },
+            { hanzi: '强化', pinyin: 'qiánghuà', definition: 'to strengthen; to enhance', level: 6, sentence: { zh: '强化管理', py: 'qiánghuà guǎnlǐ', en: 'strengthen management' } },
+            { hanzi: '权衡', pinyin: 'quánhéng', definition: 'to weigh; to balance', level: 6, sentence: { zh: '权衡利弊', py: 'quánhéng lìbì', en: 'weigh pros and cons' } },
+            { hanzi: '确立', pinyin: 'quèlì', definition: 'to establish; to set', level: 6, sentence: { zh: '确立目标', py: 'quèlì mùbiāo', en: 'set goals' } },
+            { hanzi: '确认', pinyin: 'quèrèn', definition: 'to confirm', level: 6, sentence: { zh: '确认信息', py: 'quèrèn xìnxī', en: 'confirm information' } },
+            { hanzi: '热忱', pinyin: 'rèchén', definition: 'enthusiasm; zeal', level: 6, sentence: { zh: '工作热忱', py: 'gōngzuò rèchén', en: 'work enthusiasm' } },
+            { hanzi: '融合', pinyin: 'rónghé', definition: 'to integrate; fusion', level: 6, sentence: { zh: '文化交流融合', py: 'wénhuà jiāoliú rónghé', en: 'cultural exchange and integration' } },
+            { hanzi: '探索', pinyin: 'tànsuǒ', definition: 'to explore; to probe', level: 6, sentence: { zh: '探索未知', py: 'tànsuǒ wèizhī', en: 'explore the unknown' } }
+        ];
+
+        // Application State
+        let currentCardIndex = 0;
+        let filteredCards = [...hskData];
+        let learnedCards = new Set();
+        let currentLevel = 'all';
+        let revealStage = 0; // 0 = initial, 1 = pinyin revealed, 2 = definition revealed, 3 = sentence revealed
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProgress();
+            renderCardGrid();
+            updateStats();
+            displayCard(0);
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Card flip on click/tap
+            const flashcard = document.getElementById('flashcard');
+            flashcard.addEventListener('click', handleCardClick);
+            
+            // Keyboard navigation
+            document.addEventListener('keydown', (e) => {
+                if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    handleCardClick();
+                } else if (e.key === 'ArrowLeft') {
+                    previousCard();
+                } else if (e.key === 'ArrowRight') {
+                    nextCard();
+                } else if (e.key >= '1' && e.key <= '4') {
+                    const grades = ['again', 'hard', 'good', 'easy'];
+                    gradeCard(grades[parseInt(e.key) - 1]);
+                }
+            });
+
+            // Level filters
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentLevel = btn.dataset.level;
+                    filterCards();
+                });
+            });
+        }
+
+        function handleCardClick() {
+            const flashcard = document.getElementById('flashcard');
+            
+            if (revealStage === 0) {
+                // First click: reveal pinyin
+                document.getElementById('frontPinyin').classList.add('revealed');
+                revealStage = 1;
+            } else if (revealStage === 1) {
+                // Second click: reveal definition
+                document.getElementById('frontDefinition').classList.add('revealed');
+                revealStage = 2;
+            } else if (revealStage === 2) {
+                // Third click: flip to show sentence
+                flashcard.classList.add('flipped');
+                setTimeout(() => {
+                    document.getElementById('sentenceSection').classList.add('revealed');
+                }, 300);
+                revealStage = 3;
+            } else if (revealStage === 3) {
+                // Fourth click: reset card
+                resetCardState();
+            }
+        }
+
+        function resetCardState() {
+            const flashcard = document.getElementById('flashcard');
+            flashcard.classList.remove('flipped');
+            
+            setTimeout(() => {
+                document.getElementById('frontPinyin').classList.remove('revealed');
+                document.getElementById('frontDefinition').classList.remove('revealed');
+                document.getElementById('sentenceSection').classList.remove('revealed');
+                revealStage = 0;
+            }, 300);
+        }
+
+        function displayCard(index) {
+            if (filteredCards.length === 0) return;
+            
+            const card = filteredCards[index];
+            const flashcard = document.getElementById('flashcard');
+            
+            // Reset card state completely
+            resetCardState();
+            
+            // Small delay to allow flip reset before content change
+            setTimeout(() => {
+                document.getElementById('frontHanzi').textContent = card.hanzi;
+                
+                // Add traditional character if different from simplified
+                const traditionalEl = document.getElementById('frontTraditional');
+                const traditionalChar = getTraditionalChar(card.hanzi);
+                if (traditionalChar && traditionalChar !== card.hanzi) {
+                    traditionalEl.textContent = traditionalChar;
+                    traditionalEl.style.display = 'block';
+                } else {
+                    traditionalEl.style.display = 'none';
+                }
+                
+                document.getElementById('frontPinyin').textContent = card.pinyin;
+                document.getElementById('frontDefinition').textContent = card.definition;
+                
+                document.getElementById('backSentenceZh').textContent = card.sentence.zh;
+                document.getElementById('backSentencePy').textContent = card.sentence.py;
+                document.getElementById('backSentenceEn').textContent = card.sentence.en;
+                
+                // Update grid highlighting
+                updateGridHighlight(index);
+                
+                // Update nav buttons
+                document.getElementById('prevBtn').disabled = index === 0;
+                document.getElementById('nextBtn').disabled = index === filteredCards.length - 1;
+                
+                currentCardIndex = index;
+            }, 150);
+        }
+
+        function nextCard() {
+            if (currentCardIndex < filteredCards.length - 1) {
+                displayCard(currentCardIndex + 1);
+            }
+        }
+
+        function previousCard() {
+            if (currentCardIndex > 0) {
+                displayCard(currentCardIndex - 1);
+            }
+        }
+
+        function gradeCard(grade) {
+            const card = filteredCards[currentCardIndex];
+            
+            if (grade === 'easy' || grade === 'good') {
+                learnedCards.add(card.hanzi);
+                saveProgress();
+                renderCardGrid();
+                updateStats();
+            }
+            
+            // Visual feedback
+            const flashcard = document.getElementById('flashcard');
+            flashcard.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                flashcard.style.transform = '';
+                if (currentCardIndex < filteredCards.length - 1) {
+                    nextCard();
+                }
+            }, 200);
+        }
+
+        function filterCards() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            filteredCards = hskData.filter(card => {
+                const matchesLevel = currentLevel === 'all' || card.level.toString() === currentLevel;
+                const matchesSearch = !searchTerm || 
+                    card.hanzi.includes(searchTerm) ||
+                    card.pinyin.toLowerCase().includes(searchTerm) ||
+                    card.definition.toLowerCase().includes(searchTerm);
+                return matchesLevel && matchesSearch;
+            });
+            
+            renderCardGrid();
+            
+            if (filteredCards.length > 0) {
+                displayCard(0);
+            }
+            
+            document.getElementById('cardCount').textContent = `${filteredCards.length} cards`;
+        }
+
+        function renderCardGrid() {
+            const grid = document.getElementById('cardGrid');
+            grid.innerHTML = '';
+            
+            filteredCards.forEach((card, index) => {
+                const gridCard = document.createElement('div');
+                gridCard.className = 'grid-card';
+                gridCard.textContent = card.hanzi;
+                
+                if (learnedCards.has(card.hanzi)) {
+                    gridCard.classList.add('learned');
+                }
+                
+                if (index === currentCardIndex) {
+                    gridCard.classList.add('active');
+                }
+                
+                gridCard.addEventListener('click', () => {
+                    displayCard(index);
+                });
+                
+                grid.appendChild(gridCard);
+            });
+        }
+
+        function updateGridHighlight(index) {
+            const gridCards = document.querySelectorAll('.grid-card');
+            gridCards.forEach((card, i) => {
+                card.classList.toggle('active', i === index);
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('totalCards').textContent = hskData.length;
+            document.getElementById('learnedCards').textContent = learnedCards.size;
+            
+            const levelCounts = {};
+            learnedCards.forEach(hanzi => {
+                const card = hskData.find(c => c.hanzi === hanzi);
+                if (card) {
+                    levelCounts[card.level] = (levelCounts[card.level] || 0) + 1;
+                }
+            });
+            
+            const maxLevel = Math.max(...Object.keys(levelCounts).map(Number), 0);
+            document.getElementById('currentLevel').textContent = maxLevel > 0 ? `HSK ${maxLevel}` : 'HSK 1';
+        }
+
+        function shuffleCards() {
+            for (let i = filteredCards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [filteredCards[i], filteredCards[j]] = [filteredCards[j], filteredCards[i]];
+            }
+            renderCardGrid();
+            displayCard(0);
+        }
+
+        function resetProgress() {
+            if (confirm('Are you sure you want to reset all progress?')) {
+                learnedCards.clear();
+                saveProgress();
+                renderCardGrid();
+                updateStats();
+            }
+        }
+
+        function saveProgress() {
+            localStorage.setItem('hskLearnedCards', JSON.stringify([...learnedCards]));
+        }
+
+        function loadProgress() {
+            const saved = localStorage.getItem('hskLearnedCards');
+            if (saved) {
+                learnedCards = new Set(JSON.parse(saved));
+            }
+        }
+
+        // Simplified to Traditional character mapping for common HSK characters
+        function getTraditionalChar(simplified) {
+            const tradMap = {
+                '的': '的', '一': '一', '是': '是', '不': '不', '了': '了',
+                '人': '人', '在': '在', '我': '我', '有': '有', '他': '他',
+                '这': '這', '中': '中', '来': '來', '上': '上', '大': '大',
+                '国': '國', '个': '個', '到': '到', '说': '說', '们': '們',
+                '去': '去', '要': '要', '没': '沒', '为': '為', '就': '就',
+                '学': '學', '会': '會', '对': '對', '能': '能', '发': '發',
+                '下': '下', '过': '過', '起': '起', '都': '都', '和': '和',
+                '那': '那', '也': '也', '着': '著', '以': '以', '而': '而',
+                '后': '後', '里': '裡', '用': '用', '道': '道', '行': '行',
+                '所': '所', '然': '然', '家': '家', '种': '種', '事': '事',
+                '成': '成', '方': '方', '多': '多', '经': '經', '么': '麼',
+                '之': '之', '法': '法', '如': '如', '其': '其', '想': '想',
+                '作': '作', '好': '好', '看': '看', '自': '自', '己': '己',
+                '手': '手', '生': '生', '心': '心', '头': '頭', '身': '身',
+                '本': '本', '前': '前', '力': '力', '原': '原', '因': '因',
+                '最': '最', '长': '長', '从': '從', '知': '知', '理': '理',
+                '气': '氣', '当': '當', '两': '兩', '些': '些', '还': '還',
+                '时': '時', '体': '體', '高': '高', '电': '電', '场': '場',
+                '进': '進', '出': '出', '小': '小', '口': '口', '山': '山',
+                '水': '水', '火': '火', '木': '木', '金': '金', '土': '土'
+            };
+            return tradMap[simplified] || null;
+        }
+    </script>
+</body>
+</html>
